@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Faction, FactionId } from '../types';
+import type { Faction, FactionId, DiplomaticStatus, GameEffect } from '../types';
 import { playSound } from '../audioManager';
 import { Tooltip } from '../components/Tooltip';
 
@@ -32,6 +32,30 @@ const RelationshipBar: React.FC<{ value: number }> = ({ value }) => {
     );
 };
 
+const DiplomaticStatusDisplay: React.FC<{ status: DiplomaticStatus }> = ({ status }) => {
+    const styles: Record<DiplomaticStatus, { text: string; className: string }> = {
+        Neutral: { text: 'Neutral', className: 'bg-stone-500 text-white' },
+        Rivalry: { text: 'Rivalry', className: 'bg-red-600 text-white' },
+        Alliance: { text: 'Alliance', className: 'bg-sky-500 text-white' },
+    };
+    const style = styles[status];
+    return <div className={`px-3 py-1 text-sm font-bold rounded-full ${style.className}`}>{style.text}</div>;
+};
+
+const formatBonus = (effect: GameEffect): string => {
+    const value = effect.value as number;
+    switch(effect.type) {
+        case 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER':
+            return `+${(value * 100).toFixed(0)}% Crumb production from followers.`;
+        case 'GLOBAL_COMBAT_DAMAGE_MULTIPLIER':
+            return `+${((value - 1) * 100).toFixed(0)}% damage in combat.`;
+        case 'GLOBAL_XP_GAIN_MULTIPLIER':
+            return `+${((value - 1) * 100).toFixed(0)}% XP from all sources.`;
+        default:
+            return 'A mysterious bonus.';
+    }
+}
+
 export const FactionsView: React.FC<FactionsViewProps> = ({ factions, onStartDialogue, onProposeTreaty }) => {
     return (
         <div className="p-6 h-full overflow-y-auto">
@@ -39,21 +63,33 @@ export const FactionsView: React.FC<FactionsViewProps> = ({ factions, onStartDia
             <p className="text-stone-400 mb-6">Manage your relationships with the other powers of the sky and streets. Alliances can be powerful, but betrayal is always an option.</p>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {Object.values(factions).map((
-                    // FIX: Explicitly typing 'faction' resolves type inference issues where it was being inferred as 'unknown'.
-                    faction: Faction
-                ) => {
+                {/* Fix: Explicitly type `faction` as `Faction` to resolve type inference issue with Object.values. */}
+                {Object.values(factions).map((faction: Faction) => {
                     const activeTreaty = faction.treaties.find(t => t.isActive);
+                    const isRival = faction.diplomaticStatus === 'Rivalry';
+                    const isAlly = faction.diplomaticStatus === 'Alliance';
+
                     return (
                         <div key={faction.id} className="bg-stone-800/50 p-4 rounded-lg border border-stone-700 flex flex-col gap-4">
-                            <div className="flex items-start gap-3">
-                               <div className="text-6xl bg-stone-900 p-2 rounded-md">{faction.art}</div>
-                               <div>
-                                    <h3 className="font-bold text-xl font-silkscreen text-amber-200">{faction.name}</h3>
-                                    <p className="text-sm text-stone-400">{faction.description}</p>
-                               </div>
+                            <div className="flex justify-between items-start">
+                                <div className="flex items-start gap-3">
+                                   <div className="text-6xl bg-stone-900 p-2 rounded-md">{faction.art}</div>
+                                   <div>
+                                        <h3 className="font-bold text-xl font-silkscreen text-amber-200">{faction.name}</h3>
+                                        <p className="text-sm text-stone-400">{faction.description}</p>
+                                   </div>
+                                </div>
+                                <DiplomaticStatusDisplay status={faction.diplomaticStatus} />
                             </div>
                             <RelationshipBar value={faction.relationship} />
+
+                            {isAlly && faction.allianceBonus && (
+                                <div className="p-2 bg-sky-900/50 rounded-md text-center border border-sky-700">
+                                    <p className="font-bold text-sky-300 text-sm">Alliance Bonus</p>
+                                    <p className="text-xs text-stone-300">{formatBonus(faction.allianceBonus)}</p>
+                                </div>
+                            )}
+
                             <div className="mt-auto pt-4 border-t border-stone-600/50 space-y-2">
                                 <button 
                                     onClick={() => {
@@ -67,17 +103,20 @@ export const FactionsView: React.FC<FactionsViewProps> = ({ factions, onStartDia
                                 <div className="grid grid-cols-3 gap-2">
                                     {activeTreaty ? (
                                         <Tooltip content={activeTreaty.description}>
-                                            <button disabled className="p-2 bg-green-800 text-xs font-bold rounded cursor-help">
+                                            <button disabled className="w-full p-2 bg-green-800 text-xs font-bold rounded cursor-help">
                                                 Treaty Active
                                             </button>
                                         </Tooltip>
                                     ) : (
-                                        <button 
-                                            onClick={() => onProposeTreaty(faction.id)}
-                                            className="p-2 bg-stone-600 hover:bg-stone-500 text-xs font-bold rounded transition-colors"
-                                        >
-                                            Propose Treaty
-                                        </button>
+                                        <Tooltip content={isRival ? "Cannot propose treaties with rivals!" : "Propose a formal treaty."}>
+                                            <button 
+                                                onClick={() => onProposeTreaty(faction.id)}
+                                                disabled={isRival}
+                                                className="w-full p-2 bg-stone-600 hover:bg-stone-500 text-xs font-bold rounded transition-colors disabled:bg-stone-700 disabled:cursor-not-allowed"
+                                            >
+                                                Propose Treaty
+                                            </button>
+                                        </Tooltip>
                                     )}
                                     <button disabled className="p-2 bg-stone-600 text-xs font-bold rounded opacity-50 cursor-not-allowed">Espionage</button>
                                     <button disabled className="p-2 bg-stone-600 text-xs font-bold rounded opacity-50 cursor-not-allowed">Crumb War</button>

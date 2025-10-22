@@ -256,6 +256,7 @@ export interface StreamDeckAction {
 
 // Factions & Diplomacy
 export type FactionId = 'rats' | 'seagulls' | 'crows';
+export type DiplomaticStatus = 'Neutral' | 'Rivalry' | 'Alliance';
 
 export interface Treaty {
     id: string;
@@ -271,10 +272,22 @@ export interface Faction {
     description: string;
     art: string;
     relationship: number; // -100 (War) to 100 (Alliance)
+    diplomaticStatus: DiplomaticStatus;
     isHostileByDefault: boolean;
     power: number;
     dialogueId: string;
     treaties: Treaty[];
+    allianceBonus?: GameEffect;
+}
+
+// Faction AI
+export interface FactionAIAction {
+    type: 'UPDATE_FACTION_STATUS' | 'ADD_INCOMING_MESSAGE';
+    payload: {
+        factionId?: FactionId;
+        status?: DiplomaticStatus;
+        dialogueId?: string;
+    };
 }
 
 // Dogmas
@@ -321,6 +334,19 @@ export interface Boss extends RivalSect {
     }[];
 }
 
+// Breadfall Minigame
+export type FallingItemType = 'crumb' | 'golden_crumb' | 'anvil';
+export interface FallingItem {
+    id: number;
+    type: FallingItemType;
+    x: number;
+    y: number;
+    rotation: number;
+}
+
+
+export type AppState = 'start' | 'intro' | 'playing' | 'bureaucracy' | 'vision' | 'breadfall';
+
 export interface GameState {
     faith: number;
     crumbs: number;
@@ -352,4 +378,5 @@ export interface GameState {
     lootBoxes: LootBox[];
     popeCustomization: PopeCustomization;
     streamDeckConfig: Array<StreamDeckAction | null>;
+    incomingMessages: DialogueNode[];
 }

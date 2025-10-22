@@ -41,10 +41,12 @@ export const FACTIONS: { [id: string]: Faction } = {
         description: 'Filthy, numerous, and masters of the alleyways. They value crumbs above all else.',
         art: '🐀',
         relationship: -50,
+        diplomaticStatus: 'Neutral',
         isHostileByDefault: true,
         power: 100,
         dialogueId: 'rats-intro',
         treaties: RAT_TREATIES,
+        allianceBonus: { type: 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER', value: 0.20 }
     },
     'seagulls': {
         id: 'seagulls',
@@ -52,10 +54,12 @@ export const FACTIONS: { [id: string]: Faction } = {
         description: 'Arrogant tyrants of the sky and sea. They are aggressive and territorial.',
         art: '🐦',
         relationship: -20,
+        diplomaticStatus: 'Neutral',
         isHostileByDefault: false,
         power: 150,
         dialogueId: 'seagulls-intro',
         treaties: SEAGULL_TREATIES,
+        allianceBonus: { type: 'GLOBAL_COMBAT_DAMAGE_MULTIPLIER', value: 1.15 }
     },
     'crows': {
         id: 'crows',
@@ -63,10 +67,12 @@ export const FACTIONS: { [id: string]: Faction } = {
         description: 'Intelligent, mysterious, and obsessed with shiny objects. They can be powerful allies or cunning foes.',
         art: '⬛',
         relationship: 0,
+        diplomaticStatus: 'Neutral',
         isHostileByDefault: false,
         power: 120,
         dialogueId: 'crows-intro',
         treaties: CROW_TREATIES,
+        allianceBonus: { type: 'GLOBAL_XP_GAIN_MULTIPLIER', value: 1.10 }
     }
 };
 

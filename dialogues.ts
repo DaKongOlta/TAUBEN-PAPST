@@ -2,6 +2,7 @@
 import type { DialogueNode } from './types';
 
 export const DIALOGUES: { [id: string]: DialogueNode } = {
+    // Player-initiated dialogues
     'rats-intro': {
         id: 'rats-intro',
         speaker: 'Rat King',
@@ -88,5 +89,52 @@ export const DIALOGUES: { [id: string]: DialogueNode } = {
         options: [
              { text: 'Leave.', nextId: null, effects: [{ type: 'WORSEN_CROW_RELATIONS', value: 15 }] },
         ],
+    },
+
+    // AI-initiated dialogues
+    'seagulls-declare-rivalry': {
+        id: 'seagulls-declare-rivalry',
+        speaker: 'Seagull Captain',
+        art: '🐦',
+        text: 'CAW! You expand too far, Pope! Your ambition will be your undoing. We now consider you a rival. The skies will not be safe for you.',
+        options: [{ text: 'So be it.', nextId: null }],
+    },
+    'rats-demand-crumbs': {
+        id: 'rats-demand-crumbs',
+        speaker: 'Rat King',
+        art: '🐀',
+        text: 'Squeak! Your hoard grows large, Pope. Too large. The Syndicate demands a "tax" of 100 crumbs to ensure... safety.',
+        options: [
+            { text: 'Pay the tax. (Lose 100 Crumbs)', nextId: null, effects: [{ type: 'LOSE_CRUMBS', value: 100 }, { type: 'IMPROVE_RAT_RELATIONS', value: 10 }] },
+            { text: 'Refuse.', nextId: null, effects: [{ type: 'WORSEN_RAT_RELATIONS', value: 25 }] },
+        ],
+    },
+    'crows-offer-info': {
+        id: 'crows-offer-info',
+        speaker: 'Corvid Elder',
+        art: '⬛',
+        text: 'Your collection of trinkets is... impressive. We appreciate such things. Know this: the Seagulls watch the Bakery Rooftop with great interest. A valuable perch.',
+        options: [{ text: 'Thank you for the information.', nextId: null }],
+    },
+    'rats-declare-alliance': {
+        id: 'rats-declare-alliance',
+        speaker: 'Rat King',
+        art: '🐀',
+        text: 'Squeak! Your influence is undeniable, and your tributes... acceptable. The Syndicate sees your value. We are allies now. Don\'t betray us.',
+        options: [{ text: 'An honor to the Syndicate.', nextId: null }],
+    },
+    'seagulls-declare-alliance': {
+        id: 'seagulls-declare-alliance',
+        speaker: 'Seagull Captain',
+        art: '🐦',
+        text: 'CAW! You have proven your strength, Pope. The Dominion will fly alongside you... for now. We are allies.',
+        options: [{ text: 'Together, we rule the skies.', nextId: null }],
+    },
+    'crows-declare-alliance': {
+        id: 'crows-declare-alliance',
+        speaker: 'Corvid Elder',
+        art: '⬛',
+        text: 'Your path aligns with our interests. The Collective will formally aid your flock. We are allies.',
+        options: [{ text: 'I appreciate your wisdom.', nextId: null }],
     },
 };

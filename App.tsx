@@ -1,8 +1,11 @@
 
 
+
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type {
-  Card, RivalSect, Building, Follower, ActiveTab, GameEvent, ActiveWeatherEvent, Quest, Skill, MapSector, MapRoute, StreamDeckAction, Faction, Dogma, ChronicleEntry, DialogueNode, Boss, GameEffect, RivalBuff, GameState, PlayerStats, Relic, LootBox, PopeCustomization, DialogueOption, FactionId
+  Card, RivalSect, Building, Follower, ActiveTab, GameEvent, ActiveWeatherEvent, Quest, Skill, MapSector, MapRoute, StreamDeckAction, Faction, Dogma, ChronicleEntry, DialogueNode, Boss, GameEffect, RivalBuff, GameState, PlayerStats, Relic, LootBox, PopeCustomization, DialogueOption, FactionId, AppState, FactionAIAction
 } from './types';
 import { ResourceType, QuestObjectiveType } from './types';
 import {
@@ -15,6 +18,7 @@ import { FACTIONS, SEAGULL_BOSS } from './factions';
 import { DOGMAS } from './dogmas';
 import { DIALOGUES } from './dialogues';
 import { RELICS, LOOT_BOXES, openLootBox } from './relics';
+import { runFactionAI } from './factionAI';
 import { getBuildingUpgradeCost } from './utils';
 import { StartScreen } from './components/StartScreen';
 import { IntroSequence } from './components/IntroSequence';
@@ -39,6 +43,8 @@ import { DivineVisionCutscene } from './components/DivineVisionCutscene';
 import { DogmaSelectionModal } from './components/DogmaSelectionModal';
 import { DialogueModal } from './components/DialogueModal';
 import { LootBoxModal } from './components/LootBoxModal';
+import { BreadfallMinigameView } from './views/BreadfallMinigameView';
+import { IncomingMessageToast } from './components/IncomingMessageToast';
 
 const STREAM_DECK_KEY_COUNT = 15;
 const SAVE_GAME_KEY = 'derPapstDerTauben_saveGame';
@@ -51,7 +57,7 @@ const getInitialPlayerStats = (): PlayerStats => ({
 });
 
 const App: React.FC = () => {
-  const [appState, setAppState] = useState<'start' | 'intro' | 'playing' | 'bureaucracy' | 'vision'>('start');
+  const [appState, setAppState] = useState<AppState>('start');
   const [hasSaveData, setHasSaveData] = useState(false);
 
   // --- STATE --- //
@@ -94,7 +100,6 @@ const App: React.FC = () => {
   // Events, Weather, Minigames
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [activeWeather, setActiveWeather] = useState<ActiveWeatherEvent | null>(null);
-  const [bureaucracyMinigameActive, setBureaucracyMinigameActive] = useState(false);
 
   // Quests
   const [activeQuest, setActiveQuest] = useState<Quest | undefined>(QUESTS[0]);
@@ -116,23 +121,25 @@ const App: React.FC = () => {
   const [gameTurn, setGameTurn] = useState(0);
   const [activeDialogue, setActiveDialogue] = useState<DialogueNode | null>(null);
   const [isDogmaSelectionVisible, setIsDogmaSelectionVisible] = useState(false);
+  const [incomingMessages, setIncomingMessages] = useState<DialogueNode[]>([]);
 
   // Integrations
   const [streamDeckConfig, setStreamDeckConfig] = useState<Array<StreamDeckAction | null>>(Array(STREAM_DECK_KEY_COUNT).fill(null));
 
   // --- SAVE / LOAD --- //
   const saveGame = useCallback(() => {
-    const gameState: GameState = {
+    // Construct a snapshot of the current state
+    const gameStateSnapshot: GameState = {
       faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation,
       deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings,
       activeQuestId: activeQuest?.id, questProgress, skills, sectors, routes, factions,
-      activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig
+      activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages
     };
-    localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(gameState));
+    localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(gameStateSnapshot));
     setHasSaveData(true);
     logChronicle("Progress has been saved to the sacred scrolls.");
     playSound('upgrade');
-  }, [faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig]);
+  }, [faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages]);
 
   const loadGame = useCallback(() => {
     const savedData = localStorage.getItem(SAVE_GAME_KEY);
@@ -168,6 +175,7 @@ const App: React.FC = () => {
       setLootBoxes(gameState.lootBoxes);
       setPopeCustomization(gameState.popeCustomization);
       setStreamDeckConfig(gameState.streamDeckConfig);
+      setIncomingMessages(gameState.incomingMessages || []);
 
       setAppState('playing');
       stopMusic('music_theme');
@@ -244,6 +252,7 @@ const App: React.FC = () => {
     setActiveDogma(null);
     setChronicle([]);
     setGameTurn(0);
+    setIncomingMessages([]);
     
     setAppState('playing');
     stopMusic('music_theme');
@@ -252,13 +261,33 @@ const App: React.FC = () => {
   }, [drawCards, logChronicle]);
 
   const applyGameEffect = useCallback((effect: GameEffect, sourceName?: string) => {
+      let finalEffectValue = effect.value;
+
+      // Apply global multipliers from alliances
+      let xpMultiplier = 1.0;
+      let combatMultiplier = 1.0;
+      // FIX: Explicitly type `f` as `Faction` to resolve type inference issue with Object.values.
+      Object.values(factions).forEach((f: Faction) => {
+        if (f.diplomaticStatus === 'Alliance' && f.allianceBonus) {
+          if (f.allianceBonus.type === 'GLOBAL_XP_GAIN_MULTIPLIER') {
+            xpMultiplier *= (f.allianceBonus.value as number);
+          }
+          if (f.allianceBonus.type === 'GLOBAL_COMBAT_DAMAGE_MULTIPLIER') {
+            combatMultiplier *= (f.allianceBonus.value as number);
+          }
+        }
+      });
+      
       switch(effect.type) {
         case 'GAIN_MORALE': setMorale(m => Math.min(100, m + (effect.value as number))); break;
         case 'GAIN_CRUMBS': setCrumbs(c => c + (effect.value as number)); break;
         case 'LOSE_CRUMBS': setCrumbs(c => Math.max(0, c - (effect.value as number))); break;
         case 'GAIN_FOLLOWERS': setFollowers(f => [...f, ...Array.from({ length: (effect.value as number) }, createInitialFollower)]); break;
         case 'GAIN_FOLLOWERS_BY_LEVEL': setFollowers(f => [...f, ...Array.from({ length: Math.floor(playerStats.level * (effect.value as number)) }, createInitialFollower)]); break;
-        case 'GAIN_XP': setPlayerStats(ps => ({...ps, xp: ps.xp + (effect.value as number)})); break;
+        case 'GAIN_XP': 
+            finalEffectValue = Math.round((effect.value as number) * xpMultiplier);
+            setPlayerStats(ps => ({...ps, xp: ps.xp + (finalEffectValue as number)})); 
+            break;
         case 'GAIN_RELIC': {
             const relic = RELICS[effect.value as string];
             if (relic && !relics.find(r => r.id === relic.id)) {
@@ -275,15 +304,17 @@ const App: React.FC = () => {
             }
             break;
         }
-        case 'DAMAGE_RIVAL': 
+        case 'DAMAGE_RIVAL': {
+            const totalDamage = Math.round((effect.value as number) * combatMultiplier);
             if (activeBoss) {
-                setActiveBoss(b => b ? { ...b, faith: Math.max(0, b.faith - (effect.value as number)) } : null);
+                setActiveBoss(b => b ? { ...b, faith: Math.max(0, b.faith - totalDamage) } : null);
             } else {
-                setRival(r => ({ ...r, faith: Math.max(0, r.faith - (effect.value as number)) }));
+                setRival(r => ({ ...r, faith: Math.max(0, r.faith - totalDamage) }));
             }
             break;
+        }
         case 'LUCKY_DAMAGE_RIVAL': {
-            const totalDamage = (effect.value as number) + playerStats.luck;
+            const totalDamage = Math.round(((effect.value as number) + playerStats.luck) * combatMultiplier);
              if (activeBoss) {
                 setActiveBoss(b => b ? { ...b, faith: Math.max(0, b.faith - totalDamage) } : null);
             } else {
@@ -340,7 +371,7 @@ const App: React.FC = () => {
             break;
         }
       }
-  }, [activeBoss, logChronicle, playerStats.level, playerStats.luck, relics]);
+  }, [activeBoss, logChronicle, playerStats.level, playerStats.luck, relics, factions]);
 
   const handlePlayCard = useCallback((card: Card) => {
     let faithCost = card.cost.resource === 'Faith' ? Math.ceil(card.cost.amount * inflation) : 0;
@@ -439,7 +470,10 @@ const App: React.FC = () => {
 
   const handleProposeTreaty = useCallback((factionId: FactionId) => {
     const faction = factions[factionId];
-    if (!faction) return;
+    if (!faction || faction.diplomaticStatus === 'Rivalry') {
+        playSound('error');
+        return;
+    };
 
     const availableTreaty = faction.treaties.find(t => !t.isActive);
     if (!availableTreaty) {
@@ -470,6 +504,54 @@ const App: React.FC = () => {
     }
   }, [factions, divineFavor, logChronicle]);
   
+  const startBreadfallMinigame = useCallback(() => {
+    stopMusic('music_game');
+    playMusic('music_minigame', 0.5, true);
+    setAppState('breadfall');
+  }, []);
+
+  const handleBreadfallComplete = useCallback((score: number) => {
+    const crumbsEarned = Math.floor(score / 2);
+    logChronicle(`Earned ${crumbsEarned} crumbs from Breadfall!`);
+    setCrumbs(c => c + crumbsEarned);
+    
+    stopMusic('music_minigame');
+    playMusic('music_game', 0.4, true);
+    setAppState('playing');
+  }, [logChronicle]);
+
+  const executeFactionAIAction = useCallback((action: FactionAIAction) => {
+    switch (action.type) {
+        case 'UPDATE_FACTION_STATUS':
+            if (action.payload.factionId && action.payload.status) {
+                setFactions(fs => {
+                    const newFactions = { ...fs };
+                    newFactions[action.payload.factionId!] = {
+                        ...newFactions[action.payload.factionId!],
+                        diplomaticStatus: action.payload.status!
+                    };
+                    return newFactions;
+                });
+            }
+            break;
+        case 'ADD_INCOMING_MESSAGE':
+            if (action.payload.dialogueId && DIALOGUES[action.payload.dialogueId]) {
+                setIncomingMessages(im => [...im, DIALOGUES[action.payload.dialogueId!]]);
+                playSound('event');
+            }
+            break;
+    }
+  }, []);
+
+  const handleViewMessage = useCallback(() => {
+    if (incomingMessages.length > 0) {
+        const [firstMessage, ...rest] = incomingMessages;
+        setActiveDialogue(firstMessage);
+        setIncomingMessages(rest);
+    }
+  }, [incomingMessages]);
+
+
   // Game Loop
   useEffect(() => {
     if (appState !== 'playing') return;
@@ -508,7 +590,7 @@ const App: React.FC = () => {
           return { ...f, devotion, loyalty, chaosIndex };
       }));
 
-      // Calculate passive gains with buffs from buildings, relics, AND treaties
+      // Calculate passive gains with buffs from buildings, relics, treaties, and alliances
       let totalFaithMultiplier = 1.0;
       let totalFollowerCrumbMultiplier = 1.0;
       let crumbGainAdd = 0;
@@ -526,8 +608,9 @@ const App: React.FC = () => {
           }
       });
       
-      // FIX: Explicitly typing 'faction' resolves type inference issues where it was being inferred as 'unknown'.
+      // Fix: Explicitly type `faction` as `Faction` to resolve type inference issue with Object.values.
       Object.values(factions).forEach((faction: Faction) => {
+        // Apply treaty bonuses
         faction.treaties.forEach(treaty => {
             if (treaty.isActive) {
                 const effect = treaty.effect;
@@ -536,6 +619,13 @@ const App: React.FC = () => {
                 if (effect.type === 'CRUMB_GAIN_ADD') crumbGainAdd += (effect.value as number);
             }
         });
+        // Apply ALLIANCE bonuses
+        if (faction.diplomaticStatus === 'Alliance' && faction.allianceBonus) {
+            const effect = faction.allianceBonus;
+            if (effect.type === 'FAITH_GAIN_MULTIPLIER') totalFaithMultiplier += (effect.value as number);
+            if (effect.type === 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER') totalFollowerCrumbMultiplier += (effect.value as number);
+            if (effect.type === 'CRUMB_GAIN_ADD') crumbGainAdd += (effect.value as number);
+        }
       });
 
       let faithPerSecond = BASE_FAITH_PER_SECOND;
@@ -579,6 +669,25 @@ const App: React.FC = () => {
     return () => clearInterval(gameTick);
   }, [appState, followers.length, buildings, rival, isRivalDefeated, activeDogma, activeBoss, relics, factions, logChronicle]);
   
+  // Faction AI Tick
+  useEffect(() => {
+    if (appState !== 'playing') return;
+    const aiTick = setInterval(() => {
+        // Construct a snapshot of the current state for the AI to process
+        const gameStateSnapshot: GameState = {
+            faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation,
+            deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings,
+            activeQuestId: activeQuest?.id, questProgress, skills, sectors, routes, factions,
+            activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages
+        };
+        const aiActions = runFactionAI(gameStateSnapshot);
+        if (aiActions.length > 0) {
+            aiActions.forEach(executeFactionAIAction);
+        }
+    }, 5000); // Faction AI runs every 5 seconds
+    return () => clearInterval(aiTick);
+  }, [appState, faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, executeFactionAIAction, incomingMessages]);
+
   useEffect(() => { /* Game saving interval */
     if (appState !== 'playing') return;
     const saveInterval = setInterval(saveGame, 30000); // Save every 30 seconds
@@ -635,7 +744,9 @@ const App: React.FC = () => {
   if (appState === 'start') return <StartScreen onNewGame={() => setAppState('intro')} onContinue={loadGame} hasSaveData={hasSaveData} />;
   if (appState === 'intro') return <IntroSequence onComplete={startNewGame} />;
   if (appState === 'vision') return <DivineVisionCutscene onComplete={() => setAppState('playing')} />;
-  if (bureaucracyMinigameActive) return <BureaucracyMinigame requests={BUREAUCRACY_MINIGAME_REQUESTS} onComplete={(score) => { setBureaucracyMinigameActive(false); setAppState('playing'); }} />;
+  if (appState === 'bureaucracy') return <BureaucracyMinigame requests={BUREAUCRACY_MINIGAME_REQUESTS} onComplete={(score) => { setAppState('playing'); }} />;
+  if (appState === 'breadfall') return <BreadfallMinigameView onComplete={handleBreadfallComplete} />;
+
   
   const renderActiveView = () => {
     const campaignProps = { faith, crumbs, followers, divineFavor, morale, hand, rival, activeBoss, popeState, rivalLastAction, isRivalDefeated, isRevoltActive, revoltSparks, onPlayCard: handlePlayCard, breadCoin, ascensionPoints, inflation, playerStats, popeCustomization, relics, lootBoxes, onOpenLootBox: handleOpenLootBox };
@@ -649,7 +760,7 @@ const App: React.FC = () => {
       case 'Factions': return <FactionsView factions={factions} onStartDialogue={(dialogueId) => setActiveDialogue(DIALOGUES[dialogueId])} onProposeTreaty={handleProposeTreaty} />;
       case 'Integrations': return <IntegrationsView streamDeckConfig={streamDeckConfig} onSetKey={handleSetStreamDeckKey} onTriggerAction={handleTriggerStreamDeckAction} resourceValues={{ faith, crumbs, followers: followers.length, divineFavor, breadCoin, ascensionPoints }} />;
       case 'Chronicles': return <ChroniclesView entries={chronicle} />;
-      case 'Minigames': return <MinigamesView />;
+      case 'Minigames': return <MinigamesView onStartMinigame={startBreadfallMinigame} />;
       case 'Prestige': return <PrestigeView ascensionPoints={ascensionPoints} onPrestige={() => logChronicle("Ascension is not yet upon us.")}/>;
       case 'Roost': return <RoostView playerStats={playerStats} popeCustomization={popeCustomization} setPopeCustomization={setPopeCustomization} relics={relics} onSave={saveGame} onLoad={loadGame} onDelete={deleteSave} hasSaveData={hasSaveData} />;
       default: return null;
@@ -666,6 +777,7 @@ const App: React.FC = () => {
       {isDogmaSelectionVisible && <DogmaSelectionModal onSelect={handleSelectDogma} />}
       {activeDialogue && <DialogueModal dialogue={activeDialogue} onChoice={handleDialogueChoice} />}
       {openedLootBoxResult && <LootBoxModal results={openedLootBoxResult} onClose={() => setOpenedLootBoxResult(null)} onApply={applyGameEffect} />}
+      {incomingMessages.length > 0 && <IncomingMessageToast message={incomingMessages[0]} onView={handleViewMessage} />}
     </main>
   );
 };
