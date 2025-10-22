@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Card, RivalSect, Follower } from '../types';
+import type { Card, RivalSect, Follower, Boss } from '../types';
 import { CardComponent } from '../components/CardComponent';
 import { PigeonPopeSprite } from '../components/PigeonPopeSprite';
 import { FaithIcon, CrumbIcon, PigeonIcon, DivineFavorIcon } from '../components/icons';
@@ -7,6 +7,7 @@ import { MoraleDisplay } from '../components/MoraleDisplay';
 import { RivalSectPanel } from '../components/RivalSectPanel';
 import { FollowerPigeonSprite } from '../components/FollowerPigeonSprite';
 import { Tooltip } from '../components/Tooltip';
+import { BossPanel } from '../components/BossPanel';
 
 interface CampaignViewProps {
     faith: number;
@@ -16,6 +17,7 @@ interface CampaignViewProps {
     morale: number;
     hand: Card[];
     rival: RivalSect;
+    activeBoss: Boss | null;
     popeState: 'idle' | 'pecking';
     rivalLastAction: string | null;
     isRivalDefeated: boolean;
@@ -25,7 +27,7 @@ interface CampaignViewProps {
 }
 
 export const CampaignView: React.FC<CampaignViewProps> = (props) => {
-    const { faith, crumbs, followers, divineFavor, morale, hand, rival, popeState, rivalLastAction, isRivalDefeated, isRevoltActive, revoltSparks, onPlayCard } = props;
+    const { faith, crumbs, followers, divineFavor, morale, hand, rival, activeBoss, popeState, rivalLastAction, isRivalDefeated, isRevoltActive, revoltSparks, onPlayCard } = props;
 
     const canAfford = (card: Card) => {
         if (card.cost.resource === 'Faith') return faith >= card.cost.amount;
@@ -57,7 +59,10 @@ export const CampaignView: React.FC<CampaignViewProps> = (props) => {
 
             {/* Main Content */}
             <div className="flex-grow flex relative overflow-hidden">
-                <div className="w-1/4 p-4"><RivalSectPanel rival={rival} lastAction={rivalLastAction} isDefeated={isRivalDefeated}/></div>
+                {activeBoss && <BossPanel boss={activeBoss} />}
+                <div className="w-1/4 p-4">
+                    {!activeBoss && <RivalSectPanel rival={rival} lastAction={rivalLastAction} isDefeated={isRivalDefeated}/>}
+                </div>
                 <div className="w-1/2 flex flex-col items-center justify-center relative">
                     <div className="absolute inset-0 pointer-events-none">
                         {followers.map((follower, i) => {

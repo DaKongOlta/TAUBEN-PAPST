@@ -2,6 +2,8 @@ import React from 'react';
 import type { Building } from '../types';
 import { ResourceType } from '../types';
 import { CrumbIcon, FaithIcon } from '../components/icons';
+import { getBuildingUpgradeCost } from '../utils';
+import { Tooltip } from '../components/Tooltip';
 
 interface EconomyViewProps {
   buildings: Building[];
@@ -15,10 +17,14 @@ const BuildingCard: React.FC<{
   onUpgrade: (buildingId: string) => void;
   canAfford: (cost: number, resource: ResourceType) => boolean;
 }> = ({ building, onUpgrade, canAfford }) => {
-  const { level, baseCost, costMultiplier, costResource } = building;
-  const cost = Math.floor(baseCost * Math.pow(costMultiplier, level));
+  const { level, costResource } = building;
+  const cost = getBuildingUpgradeCost(building);
   const production = building.baseProduction * level;
   const canCurrentlyAfford = canAfford(cost, costResource);
+
+  const tooltipContent = canCurrentlyAfford
+    ? `Upgrade for ${cost} ${costResource}`
+    : `Not enough ${costResource}. Required: ${cost}`;
 
   return (
     <div className="bg-stone-800/50 p-4 rounded-lg border border-stone-700 flex flex-col gap-2">
@@ -41,19 +47,21 @@ const BuildingCard: React.FC<{
           </span>
         </div>
       </div>
-      <button
-        onClick={() => onUpgrade(building.id)}
-        disabled={!canCurrentlyAfford}
-        className="w-full mt-auto p-3 bg-amber-600 hover:bg-amber-500 disabled:bg-stone-600 disabled:cursor-not-allowed rounded-lg text-white font-silkscreen text-md transition-colors"
-      >
-        <div className="flex flex-col items-center">
-            <span>{level === 0 ? 'Build' : 'Upgrade'}</span>
-            <div className="flex items-center justify-center gap-1 text-xs opacity-80">
-                <span>Cost: {cost}</span>
-                {costResource === ResourceType.Faith ? <FaithIcon className="w-3 h-3"/> : <CrumbIcon className="w-3 h-3"/>}
-            </div>
-        </div>
-      </button>
+      <Tooltip content={tooltipContent} position="top" className="w-full mt-auto">
+        <button
+          onClick={() => onUpgrade(building.id)}
+          disabled={!canCurrentlyAfford}
+          className="w-full p-3 bg-amber-600 hover:bg-amber-500 disabled:bg-stone-600 disabled:cursor-not-allowed rounded-lg text-white font-silkscreen text-md transition-colors"
+        >
+          <div className="flex flex-col items-center">
+              <span>{level === 0 ? 'Build' : 'Upgrade'}</span>
+              <div className="flex items-center justify-center gap-1 text-xs opacity-80">
+                  <span>Cost: {cost}</span>
+                  {costResource === ResourceType.Faith ? <FaithIcon className="w-3 h-3"/> : <CrumbIcon className="w-3 h-3"/>}
+              </div>
+          </div>
+        </button>
+      </Tooltip>
     </div>
   );
 };

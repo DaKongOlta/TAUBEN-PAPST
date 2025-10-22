@@ -42,12 +42,28 @@ export const QUESTS: Quest[] = [
         objectives: [
             {
                 type: QuestObjectiveType.DEFEAT_RIVAL,
-                description: 'Defeat a Rival Sect',
+                description: 'Defeat the Cult of the Gutter Rat',
                 targetValue: 1,
             }
         ],
         reward: {
             divineFavor: 5,
+        }
+    },
+    {
+        id: 'quest-004',
+        name: 'The Sky Tyrant',
+        description: 'The Coastal Seagull Dominion has noticed your rise. Their champion, Gulliver, challenges your rule.',
+        unlocksAfter: 'quest-003',
+        objectives: [
+            {
+                type: QuestObjectiveType.DEFEAT_BOSS,
+                description: 'Defeat Gulliver, the Seagull Champion',
+                targetValue: 1,
+            }
+        ],
+        reward: {
+            divineFavor: 10,
         }
     }
 ];

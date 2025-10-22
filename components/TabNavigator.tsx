@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ActiveTab } from '../types';
-import { CampaignIcon, TycoonIcon, PigeonIcon, MapIcon, SkillsIcon, AnalyticsIcon, DivineFavorIcon, IntegrationsIcon } from './icons';
+import { CampaignIcon, TycoonIcon, PigeonIcon, MapIcon, SkillsIcon, ChroniclesIcon, DivineFavorIcon, IntegrationsIcon, FactionsIcon } from './icons';
 
 interface TabNavigatorProps {
   activeTab: ActiveTab;
@@ -13,9 +13,9 @@ const TABS: { id: ActiveTab, label: string, icon: React.FC<{className?: string}>
     { id: 'Followers', label: 'Followers', icon: PigeonIcon },
     { id: 'Map', label: 'Map', icon: MapIcon },
     { id: 'Skills', label: 'Skills', icon: SkillsIcon },
+    { id: 'Factions', label: 'Factions', icon: FactionsIcon },
     { id: 'Integrations', label: 'Integrations', icon: IntegrationsIcon },
-    { id: 'Endgame', label: 'Endgame', icon: DivineFavorIcon },
-    { id: 'Analytics', label: 'Analytics', icon: AnalyticsIcon },
+    { id: 'Chronicles', label: 'Chronicles', icon: ChroniclesIcon },
 ];
 
 export const TabNavigator: React.FC<TabNavigatorProps> = ({ activeTab, onTabChange }) => {
