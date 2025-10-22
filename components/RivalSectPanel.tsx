@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { RivalSect } from '../types';
 import { FaithIcon, HeresyIcon } from './icons';
 import { RivalPopeSprite } from './RivalPopeSprite';
+import { Tooltip } from './Tooltip';
 
 interface RivalSectPanelProps {
   rival: RivalSect;
@@ -40,14 +41,18 @@ export const RivalSectPanel: React.FC<RivalSectPanelProps> = ({ rival, lastActio
             </div>
         </div>
         <div className="mt-3 space-y-1 text-sm">
-            <div className="flex items-center justify-between bg-black/20 p-1 rounded">
-                <span className="flex items-center gap-1 font-bold"><FaithIcon className="w-4 h-4 text-red-400"/> Faith</span>
-                <span>{rival.faith.toFixed(0)}</span>
-            </div>
-             <div className="flex items-center justify-between bg-black/20 p-1 rounded">
-                <span className="flex items-center gap-1 font-bold"><HeresyIcon className="w-4 h-4"/> Heresy Rate</span>
-                <span>{rival.heresyPerSecond.toFixed(1)}/s</span>
-            </div>
+            <Tooltip content="The rival sect's strength. Reduce this to zero to defeat them." widthClass="w-52" position="right">
+                <div className="flex items-center justify-between bg-black/20 p-1 rounded cursor-help">
+                    <span className="flex items-center gap-1 font-bold"><FaithIcon className="w-4 h-4 text-red-400"/> Faith</span>
+                    <span>{rival.faith.toFixed(0)}</span>
+                </div>
+            </Tooltip>
+             <Tooltip content="The rate at which the rival sect spreads dissent, reducing your flock's morale." widthClass="w-56" position="right">
+                <div className="flex items-center justify-between bg-black/20 p-1 rounded cursor-help">
+                    <span className="flex items-center gap-1 font-bold"><HeresyIcon className="w-4 h-4"/> Heresy Rate</span>
+                    <span>{rival.heresyPerSecond.toFixed(1)}/s</span>
+                </div>
+            </Tooltip>
         </div>
         <div className="mt-3">
           <h5 className="text-center text-xs text-red-300/70 font-bold">HAND</h5>

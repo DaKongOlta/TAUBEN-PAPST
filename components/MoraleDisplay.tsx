@@ -13,9 +13,10 @@ export const MoraleDisplay: React.FC<MoraleDisplayProps> = ({ morale }) => {
   };
 
   const status = getMoraleStatus();
+  const isDangerouslyLow = morale < 20;
 
   return (
-    <div className="flex items-center justify-center gap-2" title={`Flock Morale: ${status.text}`}>
+    <div className={`flex items-center justify-center gap-2 p-2 rounded-full ${isDangerouslyLow ? 'animate-low-morale-pulse' : ''}`}>
       <MoraleIcon className={`w-8 h-8 ${status.className}`} />
       <span className="font-bold">{morale.toFixed(0)}%</span>
     </div>

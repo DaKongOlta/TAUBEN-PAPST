@@ -20,10 +20,10 @@ export const RivalPopeSprite: React.FC<RivalPopeSpriteProps> = ({ state }) => {
         <ellipse cx="50" cy="20" rx="18" ry="5" fill="none" stroke="#a855f7" strokeWidth="2.5" className="rival-halo" />
         {/* Body Group */}
         <g className="rival-body-group">
-          {/* Wing */}
-          <path className="rival-wing" d="M 45 60 Q 65 40 80 65 C 70 75 55 75 45 60 Z" fill="#57534e" stroke="#292524" strokeWidth="1.5" />
+          {/* Wing - with ragged edge */}
+          <path className="rival-wing" d="M 45 60 Q 65 40 80 65 C 75 68 78 70 70 75 C 65 78 55 75 45 60 Z" fill="#57534e" stroke="#292524" strokeWidth="1.5" />
           {/* Body */}
-          <path d="M 30 80 Q 15 60 35 40 C 50 30 70 40 70 60 Q 75 80 50 85 Q 35 85 30 80 Z" fill="#78716c" stroke="#44403c" strokeWidth="2" />
+          <path d="M 30 80 Q 15 60 35 40 C 50 30 70 40 70 60 Q 75 80 50 85 C 45 87 40 84 30 80 Z" fill="#78716c" stroke="#44403c" strokeWidth="2" />
         </g>
         {/* Head Group */}
         <g className="rival-head-group">

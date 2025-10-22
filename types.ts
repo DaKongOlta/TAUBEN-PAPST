@@ -1,224 +1,167 @@
-import React from 'react';
-
-export enum CardType {
-  Miracle = 'Miracle',
-  Propaganda = 'Propaganda',
-  Ritual = 'Ritual',
-  Conflict = 'Conflict',
-}
+// types.ts
 
 export enum ResourceType {
   Faith = 'Faith',
   Crumbs = 'Crumbs',
-  Followers = 'Followers',
-  Heresy = 'Heresy',
+  DivineFavor = 'DivineFavor',
 }
 
 export interface CardCost {
-  resource: ResourceType;
   amount: number;
+  resource: ResourceType;
 }
 
-export enum EffectType {
-  // Player Resource Gain
-  ADD_FAITH = 'ADD_FAITH',
-  ADD_CRUMBS = 'ADD_CRUMBS',
-  ADD_FOLLOWERS = 'ADD_FOLLOWERS',
+export type CardType = 'Miracle' | 'Propaganda' | 'Ritual' | 'Conflict';
 
-  // Player Rate Boost
-  BOOST_FPC = 'BOOST_FPC', // Faith per click (not used)
-  BOOST_CPS = 'BOOST_CPS', // Crumbs per second
-  BOOST_FPS = 'BOOST_FPS', // Faith per second
-
-  // Player Temporary Boost
-  TEMP_FPS_ADD = 'TEMP_FPS_ADD',
-
-  // Player Deck Manipulation
-  DRAW_CARDS = 'DRAW_CARDS',
-
-  // Player vs Rival
-  ATTACK_RIVAL = 'ATTACK_RIVAL',
-  REDUCE_HERESY = 'REDUCE_HERESY',
-  
-  // Rival vs Player
-  STEAL_FOLLOWERS = 'STEAL_FOLLOWERS',
-  ADD_HERESY_FLAT = 'ADD_HERESY_FLAT',
-  BOOST_HERESY_PER_SECOND = 'BOOST_HERESY_PER_SECOND',
-  ATTACK_PLAYER_FAITH = 'ATTACK_PLAYER_FAITH',
-  STEAL_CRUMBS = 'STEAL_CRUMbs',
-
-  // Relic/Meta Effects
-  STARTING_CRUMBS = 'STARTING_CRUMBS',
-  BASE_FPS_ADD = 'BASE_FPS_ADD',
-  CRUMB_GAIN_MULTIPLIER = 'CRUMB_GAIN_MULTIPLIER',
-  REDUCE_MORALE_DECAY = 'REDUCE_MORALE_DECAY', // New relic effect
-}
-
-export interface CardEffect {
-  type: EffectType;
-  value: number;
-  duration?: number; // for temporary effects
+export interface GameEffect {
+    type: string; // e.g., 'GAIN_FAITH', 'GAIN_FOLLOWERS', 'DAMAGE_RIVAL'
+    value: number;
 }
 
 export interface Card {
   id: string;
   name: string;
-  description: string;
   type: CardType;
-  cost: CardCost;
-  effect: CardEffect;
-  art: string; // Emoji or simple character
-}
-
-export interface Relic {
-  id: string;
-  name:string;
-  description: string;
   art: string;
-  effect: {
-    type: EffectType;
-    value: number;
-  }
-}
-
-export interface Upgrade {
-  id: string;
-  name: string;
   description: string;
-  cost: number;
-  costResource: ResourceType;
-  effect: {
-    type: 'ADD_FPS' | 'ADD_CPC' | 'ADD_FOLLOWERS';
-    value: number;
-  };
-  owned: number;
+  cost: CardCost;
+  effects: GameEffect[];
 }
 
-export interface MetaUpgrade {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  maxLevel: number;
-  level: number;
-  effect: (level: number) => string;
-}
-
-// For temporary boosts
-export interface TemporaryEffect {
-  id: string;
-  description: string;
-  type: EffectType.TEMP_FPS_ADD;
-  value: number;
-  duration: number;
-  sourceName: string;
-}
-
-
-// For events
 export interface EventChoice {
-    text: string;
-    effects: {
-        type: EffectType;
-        value: number;
-    }[];
-    description: string; // "You gain 50 crumbs"
+  text: string;
+  description: string;
+  effects: GameEffect[];
 }
 
 export interface GameEvent {
-    id: string;
-    title: string;
-    description: string;
-    art: string;
-    choices?: EventChoice[];
-    minigame?: 'bureaucracy';
+  id: string;
+  title: string;
+  description: string;
+  art: string;
+  choices: EventChoice[];
 }
 
-// For Rivals
 export interface RivalSect {
-    id: string;
-    name: string;
-    art: string;
-    faith: number;
-    deck: Card[];
-    hand: Card[];
-    discard: Card[];
-    heresyPerSecond: number; // Base rate, can be modified by cards
+  name: string;
+  faith: number;
+  heresyPerSecond: number;
+  hand: Card[];
+  deck: Card[];
+  lastActionTimestamp: number;
 }
 
-// For Weather
 export enum WeatherType {
-    BREAD_STORM = 'BREAD_STORM',
-    MORNING_SUNLIGHT = 'MORNING_SUNLIGHT',
-    FAITH_ECLIPSE = 'FAITH_ECLIPSE',
-    DUST_DEVIL = 'DUST_DEVIL',
+  BREAD_STORM = 'BREAD_STORM',
+  MORNING_SUNLIGHT = 'MORNING_SUNLIGHT',
+  FAITH_ECLIPSE = 'FAITH_ECLIPSE',
+  DUST_DEVIL = 'DUST_DEVIL',
 }
 
 export interface WeatherEffectDefinition {
-    id: string;
-    name: string;
-    description: string;
-    art: string;
-    type: WeatherType;
-    duration: number; // total duration
-    crumbGainMultiplier?: number;
-    faithGainMultiplier?: number;
-    rivalFaithGainMultiplier?: number;
-    heresyPerSecondAdd?: number;
+  id: string;
+  name: string;
+  description: string;
+  art: string;
+  type: WeatherType;
+  duration: number;
+  faithGainMultiplier?: number;
+  crumbGainMultiplier?: number;
+  rivalFaithGainMultiplier?: number;
+  heresyPerSecondAdd?: number;
 }
 
-export interface ActiveWeatherEvent {
-    id: string; // from the definition
-    type: WeatherType;
-    name: string;
-    description: string;
-    art: string;
-    duration: number; // remaining duration
-    initialDuration: number; // for UI
+export interface ActiveWeatherEvent extends WeatherEffectDefinition {
+    // inherits from definition, duration will be the countdown value
 }
 
-// For Quests
 export enum QuestObjectiveType {
-    REACH_FOLLOWERS = 'REACH_FOLLOWERS',
-    DEFEAT_RIVAL = 'DEFEAT_RIVAL',
+  REACH_FOLLOWERS = 'REACH_FOLLOWERS',
+  DEFEAT_RIVAL = 'DEFEAT_RIVAL',
+  PLAY_CARDS = 'PLAY_CARDS',
 }
 
 export interface QuestObjective {
-    type: QuestObjectiveType;
-    description: string;
-    targetValue: number;
+  type: QuestObjectiveType;
+  description: string;
+  targetValue: number;
+}
+
+export interface QuestReward {
+    divineFavor?: number;
+    crumbs?: number;
+    faith?: number;
+    unlockCardIds?: string[];
 }
 
 export interface Quest {
-    id: string;
-    name: string;
-    description: string;
-    objectives: QuestObjective[];
-    unlocksAfter?: string; // ID of the prerequisite quest
-    reward: {
-        divineFavor?: number;
-        relicId?: string;
-    };
+  id: string;
+  name: string;
+  description: string;
+  unlocksAfter: string | undefined;
+  objectives: QuestObjective[];
+  reward: QuestReward;
 }
 
-// For Flock AI
-export type FollowerAnimationState = 'idle' | 'pecking' | 'looking' | 'flapping';
+export type FollowerAnimationState = 'idle' | 'pecking' | 'looking' | 'flapping' | 'chaotic';
 
-export interface Follower {
-    id: string;
-    x: number;
-    y: number;
-    targetX: number;
-    targetY: number;
-    animationDelay: string;
-    animationState: FollowerAnimationState;
-    animationEndTimestamp?: number;
-}
-
-// For Bureaucracy Minigame
 export interface BureaucracyRequest {
     id: string;
     title: string;
     description: string;
     correctAction: 'approve' | 'deny';
 }
+
+export interface Building {
+  id: string;
+  name: string;
+  description: string;
+  art: string;
+  productionType: ResourceType;
+  baseProduction: number; // per second
+  baseCost: number;
+  costResource: ResourceType;
+  costMultiplier: number;
+  level: number;
+}
+
+// New Types for UI Restructure and Features
+
+export interface Follower {
+    id: string;
+    name: string;
+    devotion: number; // 0-100, affects productivity
+    chaosIndex: number; // 0-100, high values can lead to negative events
+    loyalty: number; // 0-100, low loyalty leads to revolts or leaving
+    productivity: number; // base crumb generation multiplier
+    animationState: FollowerAnimationState;
+}
+
+export type SkillTreeType = 'Automation' | 'Propaganda' | 'Combat' | 'Memes';
+
+export interface Skill {
+    id: string;
+    name:string;
+    description: string;
+    art: string;
+    tree: SkillTreeType;
+    cost: number; // in Divine Favor
+    unlocked: boolean;
+    dependencies: string[]; // IDs of skills required to unlock this one
+    cooldown?: number; // in seconds
+    lastUsed?: number; // timestamp
+    position: { row: number, col: number };
+}
+
+export interface MapSector {
+    id: string;
+    name: string;
+    art: string;
+    description: string;
+    isUnlocked: boolean;
+    isExplored: boolean;
+    resources: Partial<Record<ResourceType, number>>;
+    rivalPresence: number; // 0-100
+}
+
+export type ActiveTab = 'Campaign' | 'Economy' | 'Followers' | 'Map' | 'Skills' | 'Endgame' | 'Analytics';

@@ -71,3 +71,32 @@ export const MoraleIcon: React.FC<{ className?: string }> = ({ className }) => (
         <path d="M12.3,1.3C11.5,0.5,10.4,0,9.2,0C6.9,0,5,1.9,5,4.2c0,1.2,0.5,2.3,1.3,3.1C2.8,9.6,0,14.4,0,20c0,1.9,1.3,3.4,3,3.9 C4,24,4.9,24,5.9,24c2.8,0,5.2-2.1,5.6-4.9c0.2-1.2-0.5-2.3-1.6-2.6c-1.2-0.3-2.3,0.4-2.6,1.6c-0.2,0.9,0.2,1.8,1,2.3 C7.1,20.8,6.5,19.5,6.5,18c0-3.3,1.7-6.3,4.3-8.2c0.8-0.5,1.2-1.5,1-2.4c-0.2-0.9-1-1.6-1.9-1.6c-0.9,0-1.7,0.5-2.1,1.3 c-0.5,1.1-1.8,1.6-2.8,1.1c-1.1-0.5-1.6-1.8-1.1-2.8C5.5,4.3,6,3.2,7,2.5C8.3,1.7,10,2.1,10.8,3.3c0.6,0.8,1.6,1.1,2.5,0.8 c1.7-0.6,2.5-2.6,1.7-4.2C14.2,0.2,13.2,0,12.3,1.3z" />
     </svg>
 );
+
+export const TycoonIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+        aria-label="Tycoon View"
+    >
+        <path d="M2 20h20v2H2v-2zm2-8h2v7H4v-7zm5 0h2v7H9v-7zm5 0h2v7h-2v-7zm5 0h2v7h-2v-7zM2 7l10-5 10 5v2H2V7z"/>
+    </svg>
+);
+
+// New Icons for Tabs
+export const CampaignIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M12 3L4 9v12h16V9l-8-6zM6 19v-8.33l6-3.34 6 3.34V19H6z"/></svg>
+);
+
+export const MapIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M20.5 3l-3.5 3.5-6-2-6 2-3.5-3.5L1 5v14l3.5-3.5 6 2 6-2 3.5 3.5L23 19V5l-2.5-2zM15 16.5l-6-2V6l6 2v8.5z"/></svg>
+);
+
+export const SkillsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v2h-2v-2zm0 4h2v6h-2v-6z"/></svg>
+);
+
+export const AnalyticsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2v-3h2v3zm4 0h-2V9h2v8z"/></svg>
+);

@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 import type { Card } from '../types';
 import { ResourceType } from '../types';
 import { FaithIcon, CrumbIcon } from './icons';
+import { Tooltip } from './Tooltip';
 
 interface CardComponentProps {
   card: Card;
@@ -44,14 +45,16 @@ export const CardComponent: React.FC<CardComponentProps> = ({ card, onPlay, canA
 
       <div className="text-center font-bold text-md border-t-2 border-black/20 pt-2">
         {card.cost.amount > 0 ? (
-          <div className="flex items-center justify-center gap-1">
-            <span>{card.cost.amount}</span>
-            {card.cost.resource === ResourceType.Faith ? (
-              <FaithIcon className="w-5 h-5" />
-            ) : (
-              <CrumbIcon className="w-5 h-5" />
-            )}
-          </div>
+          <Tooltip content={`This card costs ${card.cost.amount} ${card.cost.resource}.`} widthClass="w-auto px-2 py-1" position="top">
+            <div className="flex items-center justify-center gap-1 cursor-help">
+              <span>{card.cost.amount}</span>
+              {card.cost.resource === ResourceType.Faith ? (
+                <FaithIcon className="w-5 h-5" />
+              ) : (
+                <CrumbIcon className="w-5 h-5" />
+              )}
+            </div>
+          </Tooltip>
         ) : (
           'Free'
         )}

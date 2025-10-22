@@ -4,9 +4,7 @@ import { QuestObjectiveType } from '../types';
 
 interface QuestTrackerProps {
   activeQuest: Quest | undefined;
-  progressValues: {
-      [QuestObjectiveType.REACH_FOLLOWERS]?: number;
-  };
+  progressValues: Partial<Record<QuestObjectiveType, number>>;
 }
 
 export const QuestTracker: React.FC<QuestTrackerProps> = ({ activeQuest, progressValues }) => {
@@ -20,11 +18,8 @@ export const QuestTracker: React.FC<QuestTrackerProps> = ({ activeQuest, progres
   }
 
   const getObjectiveProgressText = (objective: QuestObjective) => {
-      let current = 0;
-      if (objective.type === QuestObjectiveType.REACH_FOLLOWERS) {
-          current = progressValues[QuestObjectiveType.REACH_FOLLOWERS] ?? 0;
-      }
-      // For DEFEAT_RIVAL, it will always show 0 until complete.
+      const current = progressValues[objective.type] ?? 0;
+      // For DEFEAT_RIVAL, it will always show 0 until complete from game logic.
       return `(${Math.min(current, objective.targetValue)}/${objective.targetValue})`;
   };
 

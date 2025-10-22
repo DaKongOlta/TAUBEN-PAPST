@@ -3,18 +3,20 @@ import type { FollowerAnimationState } from '../types';
 
 interface FollowerPigeonSpriteProps {
   animationState: FollowerAnimationState;
+  style?: React.CSSProperties;
 }
 
-export const FollowerPigeonSprite: React.FC<FollowerPigeonSpriteProps> = ({ animationState }) => {
+export const FollowerPigeonSprite: React.FC<FollowerPigeonSpriteProps> = ({ animationState, style }) => {
   const animationClass = {
     idle: 'animate-follower-idle',
     pecking: 'animate-follower-peck',
     looking: 'animate-follower-look',
     flapping: 'animate-follower-flap',
+    chaotic: 'animate-follower-chaotic',
   }[animationState];
 
   return (
-    <div className={`relative follower-sprite-container z-20 pointer-events-none ${animationClass}`}>
+    <div className={`relative follower-sprite-container z-20 pointer-events-none ${animationClass}`} style={style}>
       <svg viewBox="0 0 50 50" className="w-full h-full drop-shadow-md">
         {/* Adjusted SVG paths from PigeonPopeSprite, scaled down and simplified */}
         <g className="pigeon-body-group">
@@ -28,6 +30,8 @@ export const FollowerPigeonSprite: React.FC<FollowerPigeonSpriteProps> = ({ anim
             {/* Head */}
             <circle cx="19" cy="21" r="6" fill="#d6d3d1" stroke="#a8a29e" strokeWidth="1.2" />
             <circle cx="17" cy="20" r="1.5" fill="black" className="pigeon-eye"/>
+            {/* Chaotic Glow Eye */}
+            <circle cx="17" cy="20" r="2.5" fill="#ef4444" className="pigeon-eye-glow" opacity="0"/>
             {/* Beak */}
             <path d="M 13 21 L 10 22 L 14 23 Z" fill="#fca5a5" stroke="#ef4444" strokeWidth="0.8" />
         </g>

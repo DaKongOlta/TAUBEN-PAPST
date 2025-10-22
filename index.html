@@ -1,529 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF--8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Der Papst der Tauben</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'VT323', monospace;
-      }
-      .font-silkscreen {
-        font-family: 'Silkscreen', sans-serif;
-      }
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Der Papst der Tauben</title>
 
-      /* --- Animations --- */
-      @keyframes bob {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-3px); }
-      }
-      .animate-pigeon-bob {
-        animation: bob 2s ease-in-out infinite;
-      }
-
-      @keyframes sparkle {
-        0% { transform: scale(1); opacity: 1; }
-        100% { transform: scale(2); opacity: 0; }
-      }
-      .particle-sparkle {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background-color: #fde047; /* yellow-300 */
-        border-radius: 50%;
-        pointer-events: none;
-        animation: sparkle 0.7s ease-out forwards;
-        box-shadow: 0 0 8px #fde047;
-      }
-
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #facc15); }
-        50% { transform: scale(1.1); filter: drop-shadow(0 0 5px #fde047); }
-      }
-      .animate-icon-pulse {
-        animation: pulse 2.5s ease-in-out infinite;
-      }
-
-      @keyframes play-card {
-        0% {
-          transform: scale(1.05) translateY(-10px);
-          opacity: 1;
-          box-shadow: 0 0 15px #fde047;
-        }
-        100% {
-          transform: scale(0.8) translateY(100px);
-          opacity: 0;
-          box-shadow: 0 0 0px #fde047;
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            silkscreen: ['Silkscreen', 'cursive'],
+          },
         }
       }
-      .animate-play-card {
-        animation: play-card 0.5s ease-in forwards;
-        pointer-events: none;
-      }
+    }
+  </script>
 
-      @keyframes draw-card {
-        from {
-          transform: translateY(100px) scale(0.8);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
-      }
-      .animate-draw-card {
-        animation: draw-card 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-      }
+  <script type="importmap">
+  {
+    "imports": {
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    }
+  }
+  </script>
 
-      /* --- Floating Text Animation --- */
-      @keyframes float-and-fade {
-        0% {
-          transform: translateY(0) scale(1.2);
-          opacity: 1;
-        }
-        100% {
-          transform: translateY(-40px) scale(0.8);
-          opacity: 0;
-        }
-      }
-      .floating-text {
-        position: fixed;
-        pointer-events: none;
-        font-weight: bold;
-        font-size: 1.25rem; /* text-xl */
-        animation: float-and-fade 1.5s ease-out forwards;
-        text-shadow: 1px 1px 2px black;
-        z-index: 100;
-      }
-      .floating-text-faith {
-        color: #fde047; /* yellow-300 */
-      }
-      .floating-text-crumbs {
-        color: #f59e0b; /* amber-500 */
-      }
+  <style>
+    /* General */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #1c1917; /* stone-900 */
+      color: #fafaf9; /* stone-50 */
+      overflow: hidden; /* Prevent scrollbars from layout shifts */
+    }
 
-      /* --- Background Ambiance Animations --- */
-      @keyframes float-up {
-        0% { transform: translateY(0px); opacity: 0.7; }
-        100% { transform: translateY(-250px); opacity: 0; }
-      }
-      .floating-crumb {
-        position: absolute;
-        background-color: #d4a373; /* A crumb color */
-        border-radius: 50%;
-        animation-name: float-up;
-        animation-timing-function: linear;
-        animation-iteration-count: infinite;
-        will-change: transform, opacity;
-        box-shadow: 0 0 5px #e9c46a;
-      }
+    /* Icons */
+    @keyframes icon-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .animate-icon-pulse {
+      animation: icon-pulse 2s infinite ease-in-out;
+    }
 
-      @keyframes shimmer {
-        0%, 100% { opacity: 0; transform: scale(0.7); }
-        50% { opacity: 0.6; transform: scale(1); }
-      }
-      .shimmering-light {
-        position: absolute;
-        background: radial-gradient(circle, rgba(253, 224, 71, 0.4) 0%, rgba(253, 224, 71, 0) 70%);
-        border-radius: 50%;
-        animation-name: shimmer;
-        animation-timing-function: ease-in-out;
-        animation-iteration-count: infinite;
-        will-change: transform, opacity;
-      }
-      
-      /* --- Pigeon Pope Animations --- */
-      .animate-pope-idle .pigeon-body-group {
-        animation: pope-body-bob 3s ease-in-out infinite;
-      }
-      .animate-pope-idle .pigeon-wing {
-          animation: pope-wing-flap 3s ease-in-out infinite;
-          transform-origin: 50px 55px;
-      }
-      .animate-pope-idle .pigeon-head-group {
-          animation: pope-head-bob 3s ease-in-out infinite;
-          transform-origin: 50px 60px; /* Neck pivot */
-      }
-      .animate-pope-idle .pigeon-eye {
-          animation: pope-blink 3s linear infinite;
-          animation-delay: 0.5s;
-      }
+    /* Morale */
+    .morale-zealous { color: #fde047; } /* yellow-300 */
+    .morale-content { color: #d1d5db; } /* gray-300 */
+    .morale-wavering { color: #ef4444; } /* red-500 */
+    @keyframes low-morale-pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 10px 5px rgba(239, 68, 68, 0); }
+    }
+    .animate-low-morale-pulse { animation: low-morale-pulse 1.5s infinite ease-out; }
 
-      @keyframes pope-body-bob {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-      }
-      @keyframes pope-wing-flap {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-8deg); }
-      }
-      @keyframes pope-head-bob {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-3deg); }
-          75% { transform: rotate(3deg); }
-      }
-      @keyframes pope-blink {
-          0%, 4%, 100% { transform: scaleY(1); }
-          2% { transform: scaleY(0.1); }
-      }
+    /* Sprites & Animations */
+    /* Pigeon Pope */
+    @keyframes pope-idle {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-3px) rotate(1deg); }
+    }
+    .animate-pope-idle { animation: pope-idle 3s infinite ease-in-out; }
+    
+    @keyframes pope-hat-bob {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(4deg); }
+    }
+    .animate-pope-hat-bob { transform-origin: 38px 40px; animation: pope-hat-bob 3s infinite ease-in-out; animation-delay: 0.1s; }
 
-      .animate-pope-peck .pigeon-head-group {
-          animation: pope-peck-motion 0.3s ease-in-out forwards;
-          transform-origin: 50px 60px; /* Neck pivot */
-      }
+    @keyframes head-peck {
+      0%, 100% { transform: rotate(0deg); }
+      40% { transform: rotate(35deg); }
+      80% { transform: rotate(-10deg); }
+    }
+    .animate-head-peck {
+        transform-origin: 50px 55px; /* Approximate neck pivot */
+        animation: head-peck 0.7s ease-in-out;
+    }
 
-      @keyframes pope-peck-motion {
-          0% { transform: rotate(0deg) translateY(0); }
-          40% { transform: rotate(45deg) translate(5px, 15px); }
-          100% { transform: rotate(0deg) translateY(0); }
-      }
+    /* Rival Pope */
+    @keyframes rival-idle {
+      0%, 100% { transform: translateY(0) rotate(1deg) scaleX(-1); }
+      50% { transform: translateY(-2px) rotate(0deg) scaleX(-1); }
+    }
+    @keyframes rival-attack {
+      0%, 100% { transform: translateX(0) scaleX(-1); }
+      50% { transform: translateX(-30px) scaleX(-1) rotate(-8deg) scale(1.1); }
+    }
+    @keyframes rival-defeat {
+      0% { transform: translateY(0) rotate(0) scaleX(-1); opacity: 1; }
+      100% { transform: translateY(40px) rotate(90deg) scaleX(-1); opacity: 0; }
+    }
+    .animate-rival-idle { animation: rival-idle 2.5s infinite ease-in-out; transform: scaleX(-1); }
+    .animate-rival-attack { animation: rival-attack 0.5s ease-out; transform: scaleX(-1); }
+    .animate-rival-defeat { animation: rival-defeat 1s forwards ease-in; transform: scaleX(-1); }
+    .rival-sprite-main { transform-origin: center; }
 
-      /* --- Rival Pope Animations --- */
-      .animate-rival-idle .rival-body-group {
-        animation: rival-body-bob 3.5s ease-in-out infinite;
-      }
-      .animate-rival-idle .rival-head-group {
-        animation: rival-head-bob 3.5s ease-in-out infinite;
-        transform-origin: 50px 38px;
-      }
-      .animate-rival-idle .rival-halo {
-        animation: pulse 4s ease-in-out infinite;
-        filter: drop-shadow(0 0 4px #a855f7);
-      }
-      @keyframes rival-body-bob {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-2px); }
-      }
-      @keyframes rival-head-bob {
+    /* Follower Pigeon */
+    .follower-sprite-container { width: 4rem; height: 4rem; }
+    @keyframes follower-idle {
+      0%, 100% { transform: translateY(0) rotate(1deg); }
+      50% { transform: translateY(-2px) rotate(-1deg); }
+    }
+    .animate-follower-idle { animation: follower-idle 3.5s infinite ease-in-out; animation-delay: var(--anim-delay, 0s); }
+
+    @keyframes follower-head-peck {
         0%, 100% { transform: rotate(0deg); }
-        40% { transform: rotate(5deg); }
+        40% { transform: rotate(40deg); }
         80% { transform: rotate(-5deg); }
-      }
+    }
+    .animate-follower-peck .pigeon-head-group {
+        transform-origin: 25px 28px; /* Approx follower neck pivot */
+        animation: follower-head-peck 0.8s ease-in-out infinite;
+        animation-delay: var(--anim-delay, 0s);
+    }
 
-      .animate-rival-attack .rival-body-group {
-        animation: rival-attack-lunge 0.5s ease-out forwards;
-      }
-      .animate-rival-attack .rival-head-group {
-        animation: rival-attack-squawk 0.5s ease-out forwards;
-        transform-origin: 50px 38px;
-      }
-      @keyframes rival-attack-lunge {
-        0%, 100% { transform: translateX(0); }
-        50% { transform: translateX(8px); }
-      }
-      @keyframes rival-attack-squawk {
-        0%, 100% { transform: rotate(0); }
-        50% { transform: rotate(-25deg) translate(5px, -5px); }
-      }
+    @keyframes follower-look {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(15deg); }
+        75% { transform: rotate(-15deg); }
+    }
+    .animate-follower-look .pigeon-head-group {
+        transform-origin: 25px 28px;
+        animation: follower-look 4s ease-in-out infinite;
+        animation-delay: var(--anim-delay, 0s);
+    }
 
-      .animate-rival-defeat .rival-sprite-main {
-        animation: rival-defeat-fade 1.5s ease-in forwards;
-      }
-      @keyframes rival-defeat-fade {
-        0% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 5px #a855f7); }
-        50% { transform: scale(1.1) rotate(15deg); opacity: 1; }
-        100% { transform: translateY(30px) scale(0.5) rotate(45deg); opacity: 0; filter: drop-shadow(0 0 0px #a855f7); }
-      }
+    @keyframes follower-wing-flap {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(-25deg) scale(1.05); }
+    }
+    .animate-follower-flap .pigeon-wing {
+        transform-origin: 22px 30px; /* Approx follower wing joint */
+        animation: follower-wing-flap 0.5s ease-in-out infinite;
+        animation-delay: var(--anim-delay, 0s);
+    }
+    
+    @keyframes follower-chaotic {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        20% { transform: translate(-2px, 1px) rotate(-5deg); }
+        40% { transform: translate(2px, -1px) rotate(5deg); }
+        60% { transform: translate(-1px, 2px) rotate(-3deg); }
+        80% { transform: translate(1px, -2px) rotate(3deg); }
+    }
+    .animate-follower-chaotic .pigeon-eye-glow {
+        animation: follower-eye-glow 0.5s infinite;
+    }
+    .animate-follower-chaotic {
+        animation: follower-chaotic 0.3s infinite ease-in-out;
+        animation-delay: var(--anim-delay, 0s);
+    }
+    @keyframes follower-eye-glow {
+        0%, 100% { opacity: 0; }
+        50% { opacity: 1; }
+    }
 
+    /* Cards */
+    @keyframes play-card {
+      to { transform: translateY(-100px) scale(1.1) rotate(5deg); opacity: 0; }
+    }
+    .animate-play-card { animation: play-card 0.5s forwards ease-in; }
+    @keyframes draw-card {
+      from { transform: translateY(100px) scale(0.8); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .animate-draw-card { animation: draw-card 0.4s ease-out; }
 
-      /* --- Follower Pigeon Animations --- */
-      .follower-sprite-container {
-        width: 48px; /* Roughly text-3xl */
-        height: 48px;
-      }
+    /* Modals & Overlays */
+    @keyframes fade-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
 
-      /* Base Idle Animation */
-      .animate-follower-idle .pigeon-body-group { animation: pope-body-bob 2.5s ease-in-out infinite; }
-      .animate-follower-idle .pigeon-wing { animation: pope-wing-flap 2.5s ease-in-out infinite; transform-origin: 22px 30px; }
-      .animate-follower-idle .pigeon-head-group { animation: pope-head-bob 2.5s ease-in-out infinite; transform-origin: 19px 21px; }
-      .animate-follower-idle .pigeon-eye { animation: pope-blink 4s linear infinite; }
+    @keyframes fade-in-down {
+      from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-fade-in-down { animation: fade-in-down 0.4s ease-out forwards; }
 
-      /* Pecking Animation */
-      .animate-follower-peck .pigeon-head-group {
-          animation: follower-peck-motion 0.5s ease-in-out;
-          transform-origin: 19px 21px;
-      }
-      @keyframes follower-peck-motion {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(50deg) translate(2px, 5px); }
-      }
+    @keyframes fade-out {
+      0% { opacity: 1; transform: scale(1); }
+      80% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.9); }
+    }
+    .animate-fade-out { animation: fade-out 2s ease-in-out forwards; }
 
-      /* Looking Around Animation */
-      .animate-follower-look .pigeon-head-group {
-          animation: follower-look-motion 3s ease-in-out;
-          transform-origin: 19px 21px;
-      }
-      @keyframes follower-look-motion {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-15deg); }
-          75% { transform: rotate(10deg); }
-      }
-
-      /* Wing Flap Animation */
-      .animate-follower-flap .pigeon-wing {
-          animation: follower-flap-motion 0.7s ease-in-out;
-          transform-origin: 22px 30px;
-      }
-      .animate-follower-flap .pigeon-body-group {
-          animation: follower-flap-bob 0.7s ease-in-out;
-      }
-      @keyframes follower-flap-motion {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-30deg) scale(1.1); }
-      }
-      @keyframes follower-flap-bob {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-      }
-
-      /* --- Parallax Background --- */
-      .parallax-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-      .parallax-bg {
+    /* Revolt Effect */
+    @keyframes revolt-spark-effect {
+        0% { transform: scale(0); opacity: 0.5; }
+        70% { transform: scale(1.5); opacity: 1; }
+        100% { transform: scale(2); opacity: 0; }
+    }
+    .revolt-spark {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        transition: background 2s ease-in-out, filter 2s ease-in-out;
-      }
-      .parallax-layer {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-position: center;
-        background-repeat: repeat-x;
-        background-size: cover;
-        will-change: transform;
-      }
-      .parallax-clouds {
-        background-image: url('data:image/png;base64,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');
-        animation: slide 20s linear infinite;
-        opacity: 0.6;
-      }
-      @keyframes slide {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-      }
-
-      /* --- Day/Night Cycle Themes --- */
-      .time-of-day-day { background: linear-gradient(to bottom, #87CEEB, #B0E0E6); }
-      .time-of-day-sunset { background: linear-gradient(to bottom, #FF7F50, #FFB6C1, #483D8B); }
-      .time-of-day-night { background: linear-gradient(to bottom, #000033, #191970); }
-      .time-of-day-dawn { background: linear-gradient(to bottom, #4682B4, #FFB6C1, #FFDAB9); }
-
-      /* --- Weather Effects --- */
-      .weather-effect-FAITH_ECLIPSE { filter: brightness(0.6) saturate(0.8); }
-      .weather-effect-MORNING_SUNLIGHT { filter: brightness(1.2) saturate(1.1); }
-      .weather-effect-DUST_DEVIL { filter: sepia(0.4) saturate(1.2); }
-      
-      /* --- Weather display animation --- */
-      @keyframes fade-in-down {
-          from { opacity: 0; transform: translate(-50%, -20px); }
-          to { opacity: 1; transform: translate(-50%, 0); }
-      }
-      .animate-fade-in-down {
-          animation: fade-in-down 0.5s ease-out forwards;
-      }
-
-      /* --- Flock AI Animations --- */
-      @keyframes leader-aura-pulse {
-        0%, 100% { transform: scale(1); opacity: 0.5; }
-        50% { transform: scale(1.1); opacity: 0.3; }
-      }
-      .leader-aura {
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 120px;
-        height: 120px;
-        background: radial-gradient(circle, rgba(253, 224, 71, 0.5) 0%, rgba(253, 224, 71, 0) 70%);
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle, rgba(255, 100, 100, 0) 0%, rgba(239, 68, 68, 0.8) 40%, rgba(255, 100, 100, 0) 70%);
         border-radius: 50%;
-        animation: leader-aura-pulse 3s ease-in-out infinite;
-        z-index: 10;
+        animation: revolt-spark-effect 0.5s ease-out forwards;
         pointer-events: none;
-      }
-      
-      @keyframes waver {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-2px); }
-        75% { transform: translateX(2px); }
-      }
-      .follower-wavering {
-        animation: waver 0.5s ease-in-out infinite;
-        opacity: 0.7;
-      }
+    }
 
-      /* --- Morale Display Colors --- */
-      .morale-zealous { color: #4ade80; /* green-400 */ }
-      .morale-content { color: #a3a3a3; /* neutral-400 */ }
-      .morale-wavering { color: #f87171; /* red-400 */ }
-      
-      /* --- Custom Scrollbar --- */
-      .lore-scrollbar::-webkit-scrollbar {
-        width: 8px;
-      }
-      .lore-scrollbar::-webkit-scrollbar-track {
-        background: #292524; /* stone-800 */
-      }
-      .lore-scrollbar::-webkit-scrollbar-thumb {
-        background-color: #78716c; /* stone-500 */
-        border-radius: 4px;
-        border: 2px solid #292524; /* stone-800 */
-      }
-      .lore-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: #a8a29e; /* stone-400 */
-      }
-
-      /* --- Faith Oscillator --- */
-      .faith-oscillator-container {
-        position: relative;
-        width: 200px;
-        height: 120px;
-        margin-bottom: 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .pendulum-pivot {
-        width: 10px;
-        height: 10px;
-        background: #78716c; /* stone-500 */
-        border-radius: 50%;
-        border: 2px solid #292524; /* stone-800 */
-        z-index: 2;
-      }
-      .pendulum-arm {
-        position: absolute;
-        top: 5px;
-        left: 50%;
-        width: 2px;
-        height: 60px;
-        background: #a8a29e; /* stone-400 */
-        transform-origin: top center;
-        transition: transform 0.1s linear; /* Smooths the animation */
-        margin-left: -1px;
-      }
-      .pendulum-bob {
-        position: absolute;
-        bottom: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 2rem; /* text-3xl */
-        filter: drop-shadow(0 0 5px #fde047);
-        animation: pulse 3s ease-in-out infinite;
-        animation-delay: 1s;
-      }
-      .oscillator-gauge {
-        position: absolute;
-        top: 60px;
-        width: 120px;
-        height: 60px;
-        border-top: 2px dashed #78716c; /* stone-500 */
-        border-radius: 60px 60px 0 0;
-        box-sizing: border-box;
-      }
-      .gauge-min, .gauge-max {
-        position: absolute;
-        bottom: 5px;
-        font-size: 0.75rem; /* text-xs */
-        color: #a8a29e; /* stone-400 */
-      }
-      .gauge-min { left: 0; }
-      .gauge-max { right: 0; }
-      .oscillator-display {
-        position: absolute;
-        bottom: 0;
-        text-align: center;
-      }
-
-      /* --- Bureaucracy Minigame --- */
-      @keyframes stamp-slam {
-        0% { transform: scale(1.5) rotate(-10deg); opacity: 0; }
-        20% { transform: scale(1) rotate(5deg); opacity: 1; }
-        40% { transform: scale(1.05) rotate(0deg); }
-        100% { transform: scale(1.05) rotate(0deg); }
-      }
-      .animate-stamp-slam { animation: stamp-slam 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-      @keyframes feedback-pop {
-        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-        50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      }
-      .animate-feedback-pop { animation: feedback-pop 0.3s ease-out forwards; }
-
-      /* --- Start Screen & Intro --- */
-      .start-screen-bg {
+    /* Start Screen & Intro */
+    .start-screen-bg {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at bottom, #1c1917 0%, #0c0a09 100%);
+        overflow: hidden;
+    }
+    @keyframes move-clouds {
+        0% { background-position: 0 0; }
+        100% { background-position: -1000px 0; }
+    }
+    .parallax-clouds {
         position: absolute;
         inset: 0;
-        background: linear-gradient(to bottom, #4682B4, #FFB6C1, #FFDAB9);
-        overflow: hidden;
-      }
-      .start-screen-bg .parallax-clouds {
-        opacity: 0.4;
-        animation: slide 60s linear infinite;
-      }
-      @keyframes title-glow {
-        0%, 100% {
-          text-shadow: 0 0 10px #fde047, 0 0 20px #fde047, 0 0 30px #fca5a5, 0 0 40px #fca5a5;
-        }
-        50% {
-          text-shadow: 0 0 20px #fde047, 0 0 30px #fde047, 0 0 40px #fca5a5, 0 0 50px #fca5a5;
-        }
-      }
-      .animate-title-glow {
-        animation: title-glow 4s ease-in-out infinite;
-      }
-      
-      @keyframes fade-in-subtle {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      .animate-fade-in-subtle {
-        animation: fade-in-subtle 2s ease-in-out forwards;
-      }
-      .start-menu-button {
-        transition: all 0.3s ease;
-        text-shadow: 2px 2px 4px #000;
-      }
-      .start-menu-button:not(:disabled):hover {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='5' seed='10'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='80'/%3E%3C/filter%3E%3Crect width='1000' height='300' fill='%231c1917'/%3E%3Crect width='1000' height='300' filter='url(%23f)' opacity='0.2'/%3E%3C/svg%3E");
+        background-size: 1000px 300px;
+        animation: move-clouds 60s linear infinite;
+        opacity: 0.1;
+    }
+    @keyframes shimmer {
+        0% { transform: scale(0); opacity: 0.5; }
+        50% { opacity: 0.2; }
+        100% { transform: scale(1.5); opacity: 0; }
+    }
+    .shimmering-light {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(253, 224, 71, 0.3) 0%, rgba(253, 224, 71, 0) 70%);
+        animation: shimmer infinite ease-out;
+    }
+    @keyframes fade-in-subtle {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-subtle { animation: fade-in-subtle 1.5s ease-out forwards; }
+    @keyframes title-glow {
+        0%, 100% { text-shadow: 0 0 10px #fcd34d, 0 0 20px #fcd34d, 0 0 30px #f59e0b; }
+        50% { text-shadow: 0 0 15px #fef08a, 0 0 25px #fef08a, 0 0 40px #facc15; }
+    }
+    .animate-title-glow { animation: title-glow 4s infinite ease-in-out; }
+    .start-menu-button {
+        transition: all 0.2s ease-out;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+    .start-menu-button:not(:disabled):hover {
         transform: scale(1.05);
-        background-color: rgba(253, 224, 71, 1);
-        color: #1c1917; /* stone-900 */
-        box-shadow: 0 0 20px #fde047;
-        text-shadow: none;
-      }
-
-      @keyframes intro-text-fade {
+        box-shadow: 0 0 15px rgba(252, 211, 77, 0.5);
+    }
+    @keyframes intro-text-fade {
         0% { opacity: 0; transform: translateY(20px); }
         20% { opacity: 1; transform: translateY(0); }
         80% { opacity: 1; transform: translateY(0); }
         100% { opacity: 0; transform: translateY(-20px); }
-      }
-      .intro-text-panel {
+    }
+    .intro-text-panel {
         animation: intro-text-fade 4s ease-in-out forwards;
-      }
+    }
 
+    /* Divine Vision Cutscene */
+    @keyframes celestial-float {
+        0%, 100% { transform: translateY(0px) rotate(-2deg); }
+        50% { transform: translateY(-10px) rotate(2deg); }
+    }
+    .animate-celestial-float { animation: celestial-float 8s infinite ease-in-out; }
+    .vision-text-panel {
+        animation: intro-text-fade 3.5s ease-in-out forwards;
+    }
 
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
+    /* Bureaucracy Minigame */
+    @keyframes stamp-slam {
+        from { transform: scale(2.5) rotate(-12deg); opacity: 0; }
+        to { transform: scale(1) rotate(-12deg); opacity: 0.3; }
+    }
+    .animate-stamp-slam { animation: stamp-slam 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes feedback-pop {
+        0% { transform: scale(0.5) translate(-50%, -50%); opacity: 0; }
+        50% { transform: scale(1.2) translate(-50%, -50%); opacity: 1; }
+        100% { transform: scale(1) translate(-50%, -50%); opacity: 1; }
+    }
+    .animate-feedback-pop { animation: feedback-pop 0.3s ease-out forwards; }
+
+    /* New UI: Tabs */
+    .tab-content {
+      animation: fade-in 0.3s ease-out;
+    }
+
+    /* New UI: Followers View */
+    .stat-bar {
+      background-color: #404040; /* neutral-700 */
+      border-radius: 9999px;
+      height: 0.75rem;
+      overflow: hidden;
+      border: 1px solid #262626;
+    }
+    .stat-bar-inner {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.3s ease-out;
+    }
+
+    /* New UI: Map View */
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .map-sector {
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+      transition: all 0.2s ease-out;
+    }
+    .map-sector.unlocked:hover {
+        transform: scale(1.1);
+        z-index: 10;
+    }
+    
+    /* New UI: Skill Tree */
+    .skill-tree-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+    .skill-node {
+        transition: all 0.2s ease-out;
+        position: relative;
+    }
+    .skill-connector {
+        position: absolute;
+        background-color: #a8a29e; /* stone-400 */
+        z-index: -1;
+    }
+    .skill-connector.unlocked {
+        background-color: #fcd34d; /* amber-400 */
+    }
+
+  </style>
+
 </head>
-  <body class="bg-stone-800 text-stone-100">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
