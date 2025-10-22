@@ -159,9 +159,45 @@ export interface MapSector {
     art: string;
     description: string;
     isUnlocked: boolean;
-    isExplored: boolean;
-    resources: Partial<Record<ResourceType, number>>;
+    resources: Partial<Record<ResourceType, number>>; // Base resource value
     rivalPresence: number; // 0-100
+    noise: number; // 0-100
+    maxInfrastructureSlots: number;
+    buildings: string[]; // IDs of buildings in this sector
+    position: { x: number, y: number }; // For non-grid layout
+    activeEvent?: { id: string, name: string, art: string }; // For seagull swarms, etc.
 }
 
-export type ActiveTab = 'Campaign' | 'Economy' | 'Followers' | 'Map' | 'Skills' | 'Endgame' | 'Analytics';
+export type ActiveTab = 'Campaign' | 'Economy' | 'Followers' | 'Map' | 'Skills' | 'Integrations' | 'Endgame' | 'Analytics';
+
+export type RouteType = 'Pilgrim' | 'Antenna' | 'CrumbTransport';
+
+export interface MapRoute {
+    id: string;
+    type: RouteType;
+    fromSectorId: string;
+    toSectorId:string;
+}
+
+export interface MapEventDefinition {
+    id: string;
+    name: string;
+    description: string;
+    art: string;
+    duration: number; // in seconds
+    applyEffect: (sectors: MapSector[]) => MapSector[]; // Function to modify sectors
+}
+
+// New Types for Stream Deck Feature
+export type StreamDeckActionType = 'PLAY_CARD' | 'UPGRADE_BUILDING' | 'BASIC_ACTION' | 'SHOW_RESOURCE';
+
+export interface StreamDeckAction {
+  type: StreamDeckActionType;
+  label: string;
+  icon: string; // Emoji
+  payload: {
+    id?: string; // cardId, buildingId
+    resource?: ResourceType | 'Followers';
+    actionName?: 'Pray' | 'Scrounge';
+  };
+}

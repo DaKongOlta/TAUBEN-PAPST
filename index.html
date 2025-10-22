@@ -311,18 +311,18 @@
     }
 
     /* New UI: Map View */
-    .map-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 8px;
-    }
     .map-sector {
       clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
       transition: all 0.2s ease-out;
+      border: 2px solid #57534e; /* stone-600 */
+    }
+    .map-sector.unlocked {
+        border-color: #fcd34d; /* amber-400 */
     }
     .map-sector.unlocked:hover {
-        transform: scale(1.1);
-        z-index: 10;
+        /* The transform is now handled by inline styles for dynamic positioning, but we can enhance the border */
+        border-color: #fef08a; /* amber-200 */
+        transform: translate(-50%, -50%) scale(1.1) !important;
     }
     
     /* New UI: Skill Tree */
@@ -343,6 +343,94 @@
     }
     .skill-connector.unlocked {
         background-color: #fcd34d; /* amber-400 */
+    }
+
+    /* New UI: Integrations View */
+    .stream-deck-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.5rem;
+        background-color: #0c0a09; /* stone-950 */
+        padding: 0.75rem;
+        border-radius: 1rem;
+        border: 2px solid #44403c; /* stone-700 */
+    }
+    .stream-deck-key {
+        aspect-ratio: 1 / 1;
+        background-color: #292524; /* stone-800 */
+        border-radius: 0.5rem;
+        border: 1px solid #57534e; /* stone-600 */
+        transition: all 0.2s ease-out;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .stream-deck-key:hover {
+        transform: scale(1.05);
+        border-color: #a8a29e; /* stone-400 */
+    }
+    .stream-deck-key.configured:hover {
+        box-shadow: 0 0 10px rgba(74, 222, 128, 0.5); /* green-400 */
+    }
+    .stream-deck-key.dragging-over {
+        border-color: #fcd34d; /* amber-400 */
+        background-color: #44403c; /* stone-700 */
+    }
+    .stream-deck-key .key-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        padding: 0.25rem;
+    }
+    .stream-deck-key .key-icon {
+        font-size: 2rem;
+        line-height: 1;
+    }
+    .stream-deck-key .key-label {
+        font-size: 0.6rem;
+        font-weight: bold;
+        color: #d6d3d1; /* stone-300 */
+        word-break: break-word;
+    }
+    .stream-deck-key .key-value {
+        font-size: 1.25rem;
+        font-weight: bold;
+        font-family: 'Silkscreen', cursive;
+    }
+    .clear-key-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background-color: rgba(239, 68, 68, 0.7); /* red-500 */
+        color: white;
+        border-radius: 9999px;
+        width: 1rem;
+        height: 1rem;
+        font-size: 0.6rem;
+        line-height: 1rem;
+        text-align: center;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .stream-deck-key:hover .clear-key-btn {
+        opacity: 1;
+    }
+    .draggable-action {
+        cursor: grab;
+        padding: 0.5rem;
+        background-color: #44403c; /* stone-700 */
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+        transition: background-color 0.2s;
+        font-size: 0.875rem;
+    }
+    .draggable-action:hover {
+        background-color: #57534e; /* stone-600 */
     }
 
   </style>

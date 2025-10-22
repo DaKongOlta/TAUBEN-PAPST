@@ -1,253 +1,339 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TabNavigator } from './components/TabNavigator';
+import type {
+  Card,
+  RivalSect,
+  Building,
+  Follower,
+  ActiveTab,
+  GameEvent,
+  ActiveWeatherEvent,
+  Quest,
+  Skill,
+  MapSector,
+  MapRoute,
+  RouteType,
+  StreamDeckAction,
+} from './types';
+import { ResourceType, QuestObjectiveType } from './types';
+import {
+  STARTING_FAITH,
+  STARTING_CRUMBS,
+  STARTING_FOLLOWERS,
+  STARTING_MORALE,
+  STARTING_DIVINE_FAVOR,
+  BASE_FAITH_PER_SECOND,
+  BASE_CRUMBS_PER_FOLLOWER,
+  MAX_HAND_SIZE,
+  initialDeck,
+  RIVAL_SECTS,
+  TYCOON_BUILDINGS,
+  createInitialFollower,
+  BUREAUCRACY_MINIGAME_REQUESTS,
+} from './constants';
+import { QUESTS } from './quests';
+import { SKILLS_DATA } from './skills';
+import { MAP_DATA } from './map';
 import { StartScreen } from './components/StartScreen';
 import { IntroSequence } from './components/IntroSequence';
+import { TabNavigator } from './components/TabNavigator';
 import { CampaignView } from './views/CampaignView';
 import { EconomyView } from './views/EconomyView';
 import { FollowersView } from './views/FollowersView';
 import { MapView } from './views/MapView';
 import { SkillsView } from './views/SkillsView';
+import { IntegrationsView } from './views/IntegrationsView';
 import { PlaceholderView } from './views/PlaceholderView';
-// FIX: Import missing components
 import { EventModal } from './components/EventModal';
+import { WeatherDisplay } from './components/WeatherDisplay';
 import { QuestTracker } from './components/QuestTracker';
-// FIX: Import MAX_HAND_SIZE constant
-import { initialDeck, RIVAL_SECTS, STARTING_CRUMBS, STARTING_FAITH, STARTING_FOLLOWERS, STARTING_MORALE, TYCOON_BUILDINGS, BASE_CRUMBS_PER_FOLLOWER, BASE_FAITH_PER_SECOND, RIVAL_ACTION_INTERVAL, createInitialFollower, STARTING_DIVINE_FAVOR, MAX_HAND_SIZE } from './constants';
-import { GAME_EVENTS } from './events';
-import { QUESTS } from './quests';
-import { SKILLS_DATA } from './skills';
-import { MAP_DATA } from './map';
-import type { Card, RivalSect, GameEvent, EventChoice, Follower, Building, ActiveTab, Skill, MapSector } from './types';
-import { playSound, stopMusic } from './audioManager';
-import { ResourceType } from './types';
+import { BureaucracyMinigame } from './components/BureaucracyMinigame';
+import { playSound, playMusic, stopMusic } from './audioManager';
+import { DivineVisionCutscene } from './components/DivineVisionCutscene';
 
-type GamePhase = 'start' | 'intro' | 'playing' | 'event' | 'minigame' | 'cutscene' | 'gameover';
+const STREAM_DECK_KEY_COUNT = 15;
 
 const App: React.FC = () => {
-    const [phase, setPhase] = useState<GamePhase>('start');
-    const [activeTab, setActiveTab] = useState<ActiveTab>('Campaign');
+  const [gameState, setGameState] = useState<'start' | 'intro' | 'playing' | 'bureaucracy' | 'vision'>('start');
+  const [hasSaveData, setHasSaveData] = useState(false);
 
-    // Core Resources
-    const [faith, setFaith] = useState(STARTING_FAITH);
-    const [crumbs, setCrumbs] = useState(STARTING_CRUMBS);
-    const [divineFavor, setDivineFavor] = useState(STARTING_DIVINE_FAVOR);
-    const [followers, setFollowers] = useState<Follower[]>(() => Array.from({ length: STARTING_FOLLOWERS }, createInitialFollower));
-    const [morale, setMorale] = useState(STARTING_MORALE);
-    
-    // Player Deck
-    const [hand, setHand] = useState<Card[]>([]);
-    const [deck, setDeck] = useState<Card[]>(initialDeck);
+  // Core Resources
+  const [faith, setFaith] = useState(STARTING_FAITH);
+  const [crumbs, setCrumbs] = useState(STARTING_CRUMBS);
+  const [followers, setFollowers] = useState<Follower[]>([]);
+  const [divineFavor, setDivineFavor] = useState(STARTING_DIVINE_FAVOR);
+  const [morale, setMorale] = useState(STARTING_MORALE);
 
-    // Game State
-    const [rival, setRival] = useState<RivalSect>({...RIVAL_SECTS[0], lastActionTimestamp: Date.now()});
-    const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
-    const [popeState, setPopeState] = useState<'idle' | 'pecking'>('idle');
-    const [rivalLastAction, setRivalLastAction] = useState<string | null>(null);
-    const [isRivalDefeated, setIsRivalDefeated] = useState(false);
-    const [isRevoltActive, setIsRevoltActive] = useState(false);
-    const [revoltSparks, setRevoltSparks] = useState<{id: number, x: number, y: number}[]>([]);
+  // Card Game
+  const [deck, setDeck] = useState<Card[]>(initialDeck);
+  const [hand, setHand] = useState<Card[]>([]);
+  const [discard, setDiscard] = useState<Card[]>([]);
 
-    // Tycoon/Economy State
-    const [buildings, setBuildings] = useState<Building[]>(TYCOON_BUILDINGS.map(b => ({ ...b, level: 0 })));
+  // UI State
+  const [activeTab, setActiveTab] = useState<ActiveTab>('Campaign');
+  const [popeState, setPopeState] = useState<'idle' | 'pecking'>('idle');
 
-    // New Systems State
-    const [skills, setSkills] = useState<Record<string, Skill>>(SKILLS_DATA);
-    const [mapSectors, setMapSectors] = useState<MapSector[]>(MAP_DATA);
+  // Rival
+  const [rival, setRival] = useState<RivalSect>(RIVAL_SECTS[0]);
+  const [rivalLastAction, setRivalLastAction] = useState<string | null>(null);
+  const [isRivalDefeated, setIsRivalDefeated] = useState(false);
 
+  // Tycoon / Economy
+  const [buildings, setBuildings] = useState<Building[]>(TYCOON_BUILDINGS.map(b => ({ ...b, level: 0 })));
 
-    // Animation loop for followers to make them feel alive
-    useEffect(() => {
-        if (phase !== 'playing' || followers.length === 0 || isRevoltActive) return;
+  // Events & Weather
+  const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
+  const [activeWeather, setActiveWeather] = useState<ActiveWeatherEvent | null>(null);
 
-        const animLoop = setInterval(() => {
-            setFollowers(currentFollowers => {
-                const animsToChange = Math.max(1, Math.floor(currentFollowers.length / 3));
-                const newFollowers = [...currentFollowers];
-                for (let i = 0; i < animsToChange; i++) {
-                    const followerIndex = Math.floor(Math.random() * currentFollowers.length);
-                    if (newFollowers[followerIndex].animationState !== 'chaotic') {
-                      const animOptions: Follower['animationState'][] = ['idle', 'pecking', 'looking', 'flapping'];
-                      const newAnim = animOptions[Math.floor(Math.random() * animOptions.length)];
-                      newFollowers[followerIndex] = {...newFollowers[followerIndex], animationState: newAnim };
-                    }
-                }
-                return newFollowers;
-            });
-        }, 3000); // Every 3 seconds
+  // Quests
+  const [activeQuest, setActiveQuest] = useState<Quest | undefined>(QUESTS[0]);
+  const [questProgress, setQuestProgress] = useState<Partial<Record<QuestObjectiveType, number>>>({});
 
-        return () => clearInterval(animLoop);
-    }, [phase, followers.length, isRevoltActive]);
+  // Followers & Morale
+  const [isRevoltActive, setIsRevoltActive] = useState(false);
+  const [revoltSparks, setRevoltSparks] = useState<{ id: number; x: number; y: number }[]>([]);
 
+  // Skills & Map
+  const [skills, setSkills] = useState<Record<string, Skill>>(SKILLS_DATA);
+  const [sectors, setSectors] = useState<MapSector[]>(MAP_DATA);
+  const [routes, setRoutes] = useState<MapRoute[]>([]);
+  
+  const [bureaucracyMinigameActive, setBureaucracyMinigameActive] = useState(false);
+  
+  // Stream Deck Integration
+  const [streamDeckConfig, setStreamDeckConfig] = useState<Array<StreamDeckAction | null>>(Array(STREAM_DECK_KEY_COUNT).fill(null));
 
-    const drawCard = useCallback(() => {
-        setHand(currentHand => {
-            if (currentHand.length >= MAX_HAND_SIZE) return currentHand;
-            const newHand = [...currentHand];
-            setDeck(currentDeck => {
-                if (currentDeck.length === 0) return []; // No reshuffle for simplicity
-                const cardToDraw = currentDeck[0];
-                newHand.push(cardToDraw);
-                return currentDeck.slice(1);
-            });
-            return newHand;
-        });
-    }, []);
+  const drawCards = useCallback((numToDraw: number, currentDeck: Card[], currentDiscard: Card[], currentHand: Card[]) => {
+    let deckToDrawFrom = [...currentDeck];
+    let cardsDrawn: Card[] = [];
+    let newDiscard = [...currentDiscard];
 
-    useEffect(() => {
-        if (phase === 'playing' && hand.length < MAX_HAND_SIZE) {
-            drawCard();
+    for (let i = 0; i < numToDraw; i++) {
+        if (currentHand.length + cardsDrawn.length >= MAX_HAND_SIZE) break;
+        if (deckToDrawFrom.length === 0) {
+            if (newDiscard.length === 0) break;
+            deckToDrawFrom = [...newDiscard].sort(() => Math.random() - 0.5);
+            newDiscard = [];
         }
-    }, [phase, hand.length, drawCard]);
-
-    const handlePlayCard = (card: Card) => {
-        console.log("Playing card:", card.name);
-        playSound('play_card');
-        setPopeState('pecking');
-        setTimeout(() => setPopeState('idle'), 700);
-
-        setHand(h => h.filter(c => c.id !== card.id));
-        // Apply card effects
-        card.effects.forEach(effect => {
-            if (effect.type === 'GAIN_FOLLOWERS') setFollowers(f => [...f, ...Array.from({ length: effect.value }, createInitialFollower)]);
-            if (effect.type === 'GAIN_CRUMBS') setCrumbs(c => c + effect.value);
-            if (effect.type === 'GAIN_MORALE') setMorale(m => Math.min(100, m + effect.value));
-            if (effect.type === 'DAMAGE_RIVAL') {
-                if (!isRivalDefeated) {
-                    setRival(r => ({...r, faith: Math.max(0, r.faith - effect.value)}));
-                    playSound('peck', 1.2);
-                }
-            }
-        });
-        setTimeout(drawCard, 500); // Draw a replacement
-    };
-    
-    // Check for rival defeat
-    useEffect(() => {
-        if (rival.faith <= 0 && !isRivalDefeated) {
-            setIsRivalDefeated(true);
-            playSound('rival_defeat');
-            setCrumbs(c => c + 100);
-            setFaith(f => f + 50);
-        }
-    }, [rival.faith, isRivalDefeated]);
-
-    const handleEventChoice = (choice: EventChoice) => {
-        choice.effects.forEach(effect => {
-            if (effect.type === 'GAIN_FAITH') setFaith(f => f + effect.value);
-            if (effect.type === 'GAIN_FOLLOWERS') setFollowers(f => [...f, ...Array.from({ length: effect.value }, createInitialFollower)]);
-        });
-        setActiveEvent(null);
-        setPhase('playing');
+        cardsDrawn.push(deckToDrawFrom.pop()!);
     }
 
-    const handleUpgradeBuilding = (buildingId: string) => {
-        setBuildings(currentBuildings => {
-            const buildingIndex = currentBuildings.findIndex(b => b.id === buildingId);
-            if (buildingIndex === -1) return currentBuildings;
+    setHand(h => [...h, ...cardsDrawn]);
+    setDeck(deckToDrawFrom);
+    setDiscard(newDiscard);
+  }, []);
 
-            const building = currentBuildings[buildingIndex];
-            const cost = Math.floor(building.baseCost * Math.pow(building.costMultiplier, building.level));
+  const startGame = useCallback(() => {
+    setFaith(STARTING_FAITH);
+    setCrumbs(STARTING_CRUMBS);
+    setFollowers(Array.from({ length: STARTING_FOLLOWERS }, createInitialFollower));
+    setDivineFavor(STARTING_DIVINE_FAVOR);
+    setMorale(STARTING_MORALE);
+    const newDeck = [...initialDeck].sort(() => Math.random() - 0.5);
+    setDeck(newDeck);
+    setDiscard([]);
+    setHand([]);
+    setRival(RIVAL_SECTS[0]);
+    setIsRivalDefeated(false);
+    setBuildings(TYCOON_BUILDINGS.map(b => ({ ...b, level: 0 })));
+    setActiveQuest(QUESTS[0]);
+    setQuestProgress({});
+    setGameState('playing');
+    stopMusic('music_theme');
+    playMusic('music_game', 0.4, true);
 
-            if (building.costResource === ResourceType.Crumbs && crumbs >= cost) {
-                setCrumbs(c => c - cost);
-                playSound('upgrade', 0.8);
-            } else if (building.costResource === ResourceType.Faith && faith >= cost) {
-                setFaith(f => f - cost);
-                playSound('upgrade', 0.8);
-            } else {
-                playSound('error', 0.7);
-                return currentBuildings;
+    drawCards(5, newDeck, [], []);
+  }, [drawCards]);
+
+  const handlePlayCard = useCallback((card: Card) => {
+    setFaith(f => f - (card.cost.resource === 'Faith' ? card.cost.amount : 0));
+    setCrumbs(c => c - (card.cost.resource === 'Crumbs' ? card.cost.amount : 0));
+
+    card.effects.forEach(effect => {
+      switch (effect.type) {
+        case 'GAIN_MORALE': setMorale(m => Math.min(100, m + effect.value)); break;
+        case 'GAIN_CRUMBS': setCrumbs(c => c + effect.value); break;
+        case 'GAIN_FOLLOWERS': setFollowers(f => [...f, ...Array.from({ length: effect.value }, createInitialFollower)]); break;
+        case 'DAMAGE_RIVAL': setRival(r => ({ ...r, faith: Math.max(0, r.faith - effect.value) })); break;
+      }
+    });
+
+    setPopeState('pecking');
+    setTimeout(() => setPopeState('idle'), 500);
+
+    const cardInHandIndex = hand.findIndex(c => c.id === card.id);
+    setHand(h => h.filter((c, i) => i !== cardInHandIndex));
+    setDiscard(d => [...d, card]);
+    playSound('play_card');
+
+    setTimeout(() => drawCards(1, deck, discard, hand.filter((c, i) => i !== cardInHandIndex)), 200);
+  }, [deck, discard, hand, drawCards]);
+
+  const handleUpgradeBuilding = useCallback((buildingId: string) => {
+    const building = buildings.find(b => b.id === buildingId);
+    if (!building) return;
+    const cost = Math.floor(building.baseCost * Math.pow(building.costMultiplier, building.level));
+
+    const canAfford = (building.costResource === ResourceType.Crumbs && crumbs >= cost) || (building.costResource === ResourceType.Faith && faith >= cost);
+
+    if (canAfford) {
+        if (building.costResource === ResourceType.Crumbs) setCrumbs(c => c - cost);
+        if (building.costResource === ResourceType.Faith) setFaith(f => f - cost);
+        setBuildings(bs => bs.map(b => b.id === buildingId ? { ...b, level: b.level + 1 } : b));
+        playSound('upgrade');
+    } else {
+        playSound('error');
+    }
+  }, [buildings, crumbs, faith]);
+  
+  const handleSetStreamDeckKey = useCallback((keyIndex: number, action: StreamDeckAction | null) => {
+    setStreamDeckConfig(currentConfig => {
+        const newConfig = [...currentConfig];
+        newConfig[keyIndex] = action;
+        return newConfig;
+    });
+    playSound('ui_click');
+  }, []);
+
+  const handleTriggerStreamDeckAction = useCallback((action: StreamDeckAction) => {
+    switch(action.type) {
+        case 'BASIC_ACTION':
+            if (action.payload.actionName === 'Pray') {
+                setFaith(f => f + 5);
+                playSound('gain', 0.5);
+            } else if (action.payload.actionName === 'Scrounge') {
+                setCrumbs(c => c + 10);
+                playSound('gain', 0.5);
             }
-
-            const newBuildings = [...currentBuildings];
-            newBuildings[buildingIndex] = { ...building, level: building.level + 1 };
-            return newBuildings;
-        });
-    };
-
-    // Game Loop
-    useEffect(() => {
-        if (phase !== 'playing') return;
-        const interval = setInterval(() => {
-            let faithPerTick = BASE_FAITH_PER_SECOND;
-            
-            // Calculate total crumb production from followers
-            const crumbsFromFollowers = followers.reduce((total, follower) => {
-                const productivityBonus = follower.devotion / 100; // 0% to 100% bonus
-                const moraleModifier = Math.max(0.5, morale / 100); // 50% penalty at 0 morale
-                return total + (BASE_CRUMBS_PER_FOLLOWER * follower.productivity * (1 + productivityBonus) * moraleModifier);
-            }, 0);
-            let crumbsPerTick = crumbsFromFollowers;
-
-            buildings.forEach(building => {
-                if (building.level > 0) {
-                    const production = building.baseProduction * building.level;
-                    if (building.productionType === ResourceType.Faith) faithPerTick += production;
-                    else if (building.productionType === ResourceType.Crumbs) crumbsPerTick += production;
+            break;
+        case 'PLAY_CARD':
+            const cardToPlay = hand.find(c => c.id === action.payload.id);
+            if (cardToPlay) {
+                const costVal = cardToPlay.cost.amount;
+                const resource = cardToPlay.cost.resource;
+                const canAfford = (resource === ResourceType.Faith && faith >= costVal) || (resource === ResourceType.Crumbs && crumbs >= costVal);
+                if(canAfford) {
+                    handlePlayCard(cardToPlay);
+                } else {
+                    playSound('error');
                 }
-            });
+            } else {
+                playSound('error');
+            }
+            break;
+        case 'UPGRADE_BUILDING':
+            if(action.payload.id) {
+                handleUpgradeBuilding(action.payload.id);
+            }
+            break;
+        // SHOW_RESOURCE does nothing on trigger
+    }
+  }, [hand, faith, crumbs, handlePlayCard, handleUpgradeBuilding]);
+  
+  // Game Loop
+  useEffect(() => {
+    if (gameState !== 'playing') return;
 
-            setFaith(f => f + faithPerTick);
-            setCrumbs(c => c + crumbsPerTick);
-
-            // Rival's Turn, Revolt Check, Events etc. remain similar
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [phase, followers, buildings, morale]);
-
-
-    const handleNewGame = () => setPhase('intro');
-    const handleContinue = () => { setPhase('playing'); stopMusic('music_theme'); };
-    const handleTabChange = (tab: ActiveTab) => setActiveTab(tab);
-
-    if (phase === 'start') return <StartScreen onNewGame={handleNewGame} onContinue={handleContinue} hasSaveData={false} />;
-    if (phase === 'intro') return <IntroSequence onComplete={() => { setPhase('playing'); stopMusic('music_theme'); }} />;
-
-    const renderActiveTab = () => {
-        switch (activeTab) {
-            case 'Campaign': return <CampaignView
-                faith={faith}
-                crumbs={crumbs}
-                followers={followers}
-                divineFavor={divineFavor}
-                morale={morale}
-                hand={hand}
-                rival={rival}
-                popeState={popeState}
-                rivalLastAction={rivalLastAction}
-                isRivalDefeated={isRivalDefeated}
-                isRevoltActive={isRevoltActive}
-                revoltSparks={revoltSparks}
-                onPlayCard={handlePlayCard}
-             />;
-            case 'Economy': return <EconomyView 
-                buildings={buildings}
-                onUpgrade={handleUpgradeBuilding}
-                currentFaith={faith}
-                currentCrumbs={crumbs}
-            />;
-            case 'Followers': return <FollowersView 
-                followers={followers} 
-                setFollowers={setFollowers}
-            />;
-            case 'Map': return <MapView sectors={mapSectors} setSectors={setMapSectors} />;
-            case 'Skills': return <SkillsView skills={skills} setSkills={setSkills} divineFavor={divineFavor} setDivineFavor={setDivineFavor} />;
-            case 'Endgame': return <PlaceholderView title="Endgame" description="The final ascension awaits... This feature is coming in a future update."/>;
-            case 'Analytics': return <PlaceholderView title="Analytics" description="Track your divine progress with charts and graphs. This feature is coming soon."/>;
-            default: return null;
+    const gameTick = setInterval(() => {
+      let faithPerSecond = BASE_FAITH_PER_SECOND;
+      let crumbsPerSecond = BASE_CRUMBS_PER_FOLLOWER * followers.length;
+      buildings.forEach(b => {
+        if (b.level > 0) {
+          if (b.productionType === ResourceType.Faith) faithPerSecond += b.baseProduction * b.level;
+          if (b.productionType === ResourceType.Crumbs) crumbsPerSecond += b.baseProduction * b.level;
         }
-    };
+      });
+      setFaith(f => f + faithPerSecond / 10);
+      setCrumbs(c => c + crumbsPerSecond / 10);
+      
+      let heresyDrain = isRivalDefeated ? 0 : rival.heresyPerSecond;
+      setMorale(m => Math.max(0, m - heresyDrain / 10));
+    }, 100);
 
-    return (
-        <main className={`bg-stone-900 text-white min-h-screen font-sans flex flex-col`}>
-            <TabNavigator activeTab={activeTab} onTabChange={handleTabChange} />
-            <div className="flex-grow relative tab-content">
-                {renderActiveTab()}
-            </div>
-             {activeEvent && <EventModal event={activeEvent} onChoice={handleEventChoice} />}
-             <QuestTracker activeQuest={QUESTS[0]} progressValues={{'REACH_FOLLOWERS': followers.length}} />
-        </main>
-    );
+    return () => clearInterval(gameTick);
+  }, [gameState, followers.length, buildings, rival.heresyPerSecond, isRivalDefeated]);
+
+  // Quest Progression
+  useEffect(() => {
+    if (!activeQuest || gameState !== 'playing') return;
+    const newProgress = { ...questProgress };
+    let allObjectivesMet = true;
+    activeQuest.objectives.forEach(obj => {
+      let currentVal = 0;
+      switch (obj.type) {
+        case QuestObjectiveType.REACH_FOLLOWERS: currentVal = followers.length; break;
+        case QuestObjectiveType.DEFEAT_RIVAL: currentVal = isRivalDefeated ? 1 : 0; break;
+      }
+      newProgress[obj.type] = currentVal;
+      if (currentVal < obj.targetValue) allObjectivesMet = false;
+    });
+    setQuestProgress(newProgress);
+    if (allObjectivesMet) {
+      playSound('quest_complete');
+      if (activeQuest.reward.divineFavor) setDivineFavor(df => df + activeQuest.reward.divineFavor!);
+      const nextQuest = QUESTS.find(q => q.unlocksAfter === activeQuest.id);
+      setActiveQuest(nextQuest);
+      setQuestProgress({});
+    }
+  }, [followers.length, isRivalDefeated, activeQuest, gameState, questProgress]);
+  
+  // Rival defeat check
+  useEffect(() => {
+      if(rival.faith <= 0 && !isRivalDefeated) {
+          setIsRivalDefeated(true);
+          playSound('victory');
+      }
+  }, [rival.faith, isRivalDefeated]);
+
+  // Morale and Revolt Check
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    if (morale < 20 && !isRevoltActive) setIsRevoltActive(true);
+    else if (morale >= 40 && isRevoltActive) setIsRevoltActive(false);
+
+    if (isRevoltActive) {
+      const sparkInterval = setInterval(() => {
+        const newSpark = { id: Date.now() + Math.random(), x: Math.random() * 100, y: Math.random() * 100 };
+        setRevoltSparks(sparks => [...sparks.slice(-10), newSpark]);
+      }, 500);
+      return () => clearInterval(sparkInterval);
+    } else {
+      setRevoltSparks([]);
+    }
+  }, [gameState, morale, isRevoltActive]);
+
+  if (gameState === 'start') return <StartScreen onNewGame={() => setGameState('intro')} onContinue={startGame} hasSaveData={hasSaveData} />;
+  if (gameState === 'intro') return <IntroSequence onComplete={startGame} />;
+  if (gameState === 'vision') return <DivineVisionCutscene onComplete={() => setGameState('playing')} />;
+  if (bureaucracyMinigameActive) return <BureaucracyMinigame requests={BUREAUCRACY_MINIGAME_REQUESTS} onComplete={(score) => {
+    setCrumbs(c => c + score * 10);
+    setDivineFavor(d => d + Math.floor(score / 5));
+    setBureaucracyMinigameActive(false);
+    setGameState('playing');
+    }} />;
+  
+  const renderActiveView = () => {
+    switch (activeTab) {
+      case 'Campaign': return <CampaignView {...{ faith, crumbs, followers, divineFavor, morale, hand, rival, popeState, rivalLastAction, isRivalDefeated, isRevoltActive, revoltSparks }} onPlayCard={handlePlayCard} />;
+      case 'Economy': return <EconomyView buildings={buildings} onUpgrade={handleUpgradeBuilding} currentCrumbs={crumbs} currentFaith={faith} />;
+      case 'Followers': return <FollowersView followers={followers} setFollowers={setFollowers} />;
+      case 'Map': return <MapView sectors={sectors} setSectors={setSectors} routes={routes} onAddRoute={(from, to, type) => setRoutes(r => [...r, { id: `route-${Date.now()}`, fromSectorId: from, toSectorId: to, type }])} />;
+      case 'Skills': return <SkillsView skills={skills} setSkills={setSkills} divineFavor={divineFavor} setDivineFavor={setDivineFavor} />;
+      case 'Integrations': return <IntegrationsView streamDeckConfig={streamDeckConfig} onSetKey={handleSetStreamDeckKey} onTriggerAction={handleTriggerStreamDeckAction} resourceValues={{ faith, crumbs, followers: followers.length, divineFavor }} />;
+      case 'Endgame': return <PlaceholderView title="Endgame" description="The Great Migration is not yet upon us. Achieve ultimate victory here... eventually." />;
+      case 'Analytics': return <PlaceholderView title="Analytics" description="Charts and graphs for the data-driven deity. Coming soon." />;
+      default: return null;
+    }
+  };
+
+  return (
+    <main className="w-screen h-screen bg-stone-900 text-stone-100 font-sans overflow-hidden flex flex-col">
+      <TabNavigator activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="flex-grow relative">{renderActiveView()}</div>
+      <QuestTracker activeQuest={activeQuest} progressValues={questProgress} />
+      {activeWeather && <WeatherDisplay weather={activeWeather} />}
+      {activeEvent && <EventModal event={activeEvent} onChoice={() => setActiveEvent(null)} />}
+    </main>
+  );
 };
 
 export default App;

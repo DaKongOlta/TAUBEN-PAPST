@@ -1,7 +1,6 @@
 import React from 'react';
 import type { ActiveTab } from '../types';
-// FIX: Import missing DivineFavorIcon
-import { CampaignIcon, TycoonIcon, PigeonIcon, MapIcon, SkillsIcon, AnalyticsIcon, DivineFavorIcon } from './icons';
+import { CampaignIcon, TycoonIcon, PigeonIcon, MapIcon, SkillsIcon, AnalyticsIcon, DivineFavorIcon, IntegrationsIcon } from './icons';
 
 interface TabNavigatorProps {
   activeTab: ActiveTab;
@@ -14,6 +13,7 @@ const TABS: { id: ActiveTab, label: string, icon: React.FC<{className?: string}>
     { id: 'Followers', label: 'Followers', icon: PigeonIcon },
     { id: 'Map', label: 'Map', icon: MapIcon },
     { id: 'Skills', label: 'Skills', icon: SkillsIcon },
+    { id: 'Integrations', label: 'Integrations', icon: IntegrationsIcon },
     { id: 'Endgame', label: 'Endgame', icon: DivineFavorIcon },
     { id: 'Analytics', label: 'Analytics', icon: AnalyticsIcon },
 ];

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import type { Skill, SkillTreeType } from '../types';
 import { playSound } from '../audioManager';
 import { DivineFavorIcon } from '../components/icons';
@@ -13,12 +13,10 @@ interface SkillsViewProps {
 const skillTrees: SkillTreeType[] = ['Automation', 'Propaganda', 'Combat', 'Memes'];
 
 const SkillNode: React.FC<{ skill: Skill, onUnlock: (skill: Skill) => void, canUnlock: boolean }> = ({ skill, onUnlock, canUnlock }) => {
-    const isAffordable = canUnlock; // Simplified for now
-    
     let buttonClass = 'bg-stone-700 text-stone-400 cursor-not-allowed';
     if (skill.unlocked) {
         buttonClass = 'bg-amber-500/80 text-white border-amber-300';
-    } else if (isAffordable) {
+    } else if (canUnlock) {
         buttonClass = 'bg-green-600/80 hover:bg-green-500/80 text-white cursor-pointer';
     }
 
@@ -29,7 +27,7 @@ const SkillNode: React.FC<{ skill: Skill, onUnlock: (skill: Skill) => void, canU
             <p className="text-xs text-stone-400 flex-grow mb-2">{skill.description}</p>
             <button
                 onClick={() => onUnlock(skill)}
-                disabled={skill.unlocked || !isAffordable}
+                disabled={skill.unlocked || !canUnlock}
                 className={`w-full p-1 rounded text-xs font-bold transition-colors ${buttonClass}`}
             >
                 {skill.unlocked ? 'Unlocked' : `Unlock (${skill.cost})`}
@@ -38,8 +36,87 @@ const SkillNode: React.FC<{ skill: Skill, onUnlock: (skill: Skill) => void, canU
     );
 };
 
+const SkillConnectorLine: React.FC<{
+  startNode: Skill;
+  endNode: Skill;
+  cellDimensions: { width: number; height: number };
+}> = ({ startNode, endNode, cellDimensions }) => {
+  const isUnlocked = startNode.unlocked && endNode.unlocked;
+
+  const { col: c1, row: r1 } = startNode.position;
+  const { col: c2, row: r2 } = endNode.position;
+
+  const gap = 1.5 * 16; // 1.5rem gap in pixels
+
+  const deltaX = (c2 - c1) * (cellDimensions.width + gap);
+  const deltaY = (r2 - r1) * (cellDimensions.height + gap);
+
+  const length = Math.hypot(deltaX, deltaY);
+  const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+  const lineStyle: React.CSSProperties = {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      width: `${length}px`,
+      height: '2px',
+      transform: `rotate(${angle}deg)`,
+      transformOrigin: '0 0',
+  };
+
+  const containerStyle: React.CSSProperties = {
+      gridColumn: c1,
+      gridRow: r1,
+      position: 'relative',
+      pointerEvents: 'none',
+  };
+
+  return (
+      <div style={containerStyle}>
+          <div
+              className={`skill-connector ${isUnlocked ? 'unlocked' : ''}`}
+              style={lineStyle}
+          />
+      </div>
+  );
+};
+
 export const SkillsView: React.FC<SkillsViewProps> = ({ skills, setSkills, divineFavor, setDivineFavor }) => {
     const [activeTree, setActiveTree] = useState<SkillTreeType>('Automation');
+    const gridRef = useRef<HTMLDivElement>(null);
+    const [cellDimensions, setCellDimensions] = useState({ width: 0, height: 0 });
+
+    useLayoutEffect(() => {
+      const calculateCellDimensions = () => {
+          if (gridRef.current) {
+              const gridStyles = window.getComputedStyle(gridRef.current);
+              const colCount = gridStyles.getPropertyValue('grid-template-columns').split(' ').length;
+              const rowCount = gridStyles.getPropertyValue('grid-template-rows').split(' ').length;
+              const colGap = parseFloat(gridStyles.getPropertyValue('column-gap'));
+              const rowGap = parseFloat(gridStyles.getPropertyValue('row-gap'));
+
+              const totalWidth = gridRef.current.clientWidth;
+              const totalHeight = gridRef.current.clientHeight;
+              
+              const cellWidth = (totalWidth - (colGap * (colCount - 1))) / colCount;
+              const cellHeight = (totalHeight - (rowGap * (rowCount - 1))) / rowCount;
+
+              setCellDimensions({ width: cellWidth, height: cellHeight });
+          }
+      };
+      
+      calculateCellDimensions();
+      const resizeObserver = new ResizeObserver(calculateCellDimensions);
+      const gridEl = gridRef.current;
+      if (gridEl) {
+          resizeObserver.observe(gridEl);
+      }
+      return () => {
+        if(gridEl) {
+          resizeObserver.unobserve(gridEl);
+        }
+      };
+  }, [activeTree]);
 
     const handleUnlockSkill = (skillToUnlock: Skill) => {
         if (skillToUnlock.unlocked || divineFavor < skillToUnlock.cost) {
@@ -61,7 +138,6 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ skills, setSkills, divin
         }));
     };
 
-    // FIX: Cast Object.values to Skill[] to fix type inference issues, resolving multiple errors.
     const visibleSkills = (Object.values(skills) as Skill[]).filter(s => s.tree === activeTree);
     
     return (
@@ -90,7 +166,21 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ skills, setSkills, divin
             </div>
 
             <div className="flex-grow bg-stone-900/50 p-4 rounded-lg relative">
-                 <div className="skill-tree-grid">
+                 <div className="skill-tree-grid" ref={gridRef}>
+                    {cellDimensions.width > 0 && visibleSkills.map(skill =>
+                      skill.dependencies.map(depId => {
+                          const depSkill = skills[depId];
+                          if (!depSkill || depSkill.tree !== activeTree) return null;
+                          return (
+                              <SkillConnectorLine
+                                  key={`${skill.id}-${depId}`}
+                                  startNode={depSkill}
+                                  endNode={skill}
+                                  cellDimensions={cellDimensions}
+                              />
+                          );
+                      })
+                    )}
                     {visibleSkills.map(skill => (
                         <SkillNode 
                             key={skill.id} 
