@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Follower, FollowerAnimationState } from '../types';
+import type { Follower, FollowerAnimationState, FollowerPersonality } from '../types';
 import { playSound } from '../audioManager';
 
 interface FollowersViewProps {
@@ -19,20 +19,18 @@ const StatBar: React.FC<{ value: number; color: string; label: string }> = ({ va
     </div>
 );
 
-const FollowerActionIndicator: React.FC<{ state: FollowerAnimationState }> = ({ state }) => {
-    const actions: Record<FollowerAnimationState, { text: string; icon: string; className: string }> = {
-        idle: { text: 'Idle', icon: '💤', className: 'text-stone-400' },
-        pecking: { text: 'Eating', icon: '🍞', className: 'text-yellow-500' },
-        looking: { text: 'Socializing', icon: '💬', className: 'text-sky-400' },
-        flapping: { text: 'Praying', icon: '🙏', className: 'text-amber-300' },
-        chaotic: { text: 'Rioting!', icon: '🔥', className: 'text-red-500 font-bold animate-pulse' },
+const PersonalityIndicator: React.FC<{ personality: FollowerPersonality }> = ({ personality }) => {
+    const styles: Record<FollowerPersonality, { text: string; icon: string; className: string }> = {
+        Standard: { text: 'Standard', icon: '🐦', className: 'bg-stone-600' },
+        Devout: { text: 'Devout', icon: '🙏', className: 'bg-amber-600' },
+        Lazy: { text: 'Lazy', icon: '😴', className: 'bg-sky-600' },
+        Rebel: { text: 'Rebel', icon: '🔥', className: 'bg-red-600' },
     };
-
-    const action = actions[state] || actions.idle;
+    const style = styles[personality];
 
     return (
-        <div className={`p-1 text-center rounded bg-stone-900/50 my-2 ${action.className}`}>
-            <span className="text-sm font-semibold">{action.icon} {action.text}</span>
+        <div className={`inline-block px-2 py-1 text-xs font-bold rounded-full text-white ${style.className}`}>
+            {style.icon} {style.text}
         </div>
     );
 };
@@ -48,6 +46,7 @@ export const FollowersView: React.FC<FollowersViewProps> = ({ followers, setFoll
                     ...f,
                     devotion: Math.min(100, f.devotion + 10),
                     loyalty: Math.min(100, f.loyalty + 5),
+                    emotions: { ...f.emotions, joy: Math.min(100, f.emotions.joy + 20) },
                 };
             }
             return f;
@@ -67,9 +66,14 @@ export const FollowersView: React.FC<FollowersViewProps> = ({ followers, setFoll
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {followers.map(follower => (
                     <div key={follower.id} className="bg-stone-800/50 p-4 rounded-lg border border-stone-700 flex flex-col gap-3">
-                        <h3 className="font-bold text-lg font-silkscreen text-amber-200 text-center">{follower.name}</h3>
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-lg font-silkscreen text-amber-200">{follower.name}</h3>
+                            <PersonalityIndicator personality={follower.personality} />
+                        </div>
                         
-                        <FollowerActionIndicator state={follower.animationState} />
+                        <div className="text-center text-xs text-stone-400">
+                            Joy: {follower.emotions.joy.toFixed(0)} | Fear: {follower.emotions.fear.toFixed(0)}
+                        </div>
 
                         <div className="space-y-3">
                             <StatBar value={follower.devotion} color="#fde047" label="Devotion" />

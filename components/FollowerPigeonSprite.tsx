@@ -13,6 +13,7 @@ export const FollowerPigeonSprite: React.FC<FollowerPigeonSpriteProps> = ({ anim
     looking: 'animate-follower-look',
     flapping: 'animate-follower-flap',
     chaotic: 'animate-follower-chaotic',
+    celebrating: 'animate-follower-celebrate',
   }[animationState];
 
   return (

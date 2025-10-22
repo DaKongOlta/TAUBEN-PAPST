@@ -84,9 +84,21 @@ export const TycoonIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
+// New Resource Icons
+export const BreadCoinIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className} aria-label="BreadCoin">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-10.5h2v5h-2v-5zM11.5 7C12.33 7 13 7.67 13 8.5S12.33 10 11.5 10 10 9.33 10 8.5 10.67 7 11.5 7z"/>
+    </svg>
+);
+
+
 // Icons for Tabs
 export const CampaignIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M12 3L4 9v12h16V9l-8-6zM6 19v-8.33l6-3.34 6 3.34V19H6z"/></svg>
+);
+
+export const RoostIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg>
 );
 
 export const MapIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -107,4 +119,21 @@ export const FactionsIcon: React.FC<{ className?: string }> = ({ className }) =>
 
 export const ChroniclesIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v8l-1-0.75L9 12V4zm5 14H6V4h1.5v9l3-2.25L14 13V4h4v14z"/></svg>
+);
+
+export const MinigamesIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h6V4zm2 16h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2h-6v16zm-4-2h2v-2h-2v2zm-4-2h2v-2H4v2zm0-4h2V8H4v2zm4 4h2v-2H8v2zm0-4h2V8H8v2zm0-4h2V4H8v2zm6 8h2v-2h-2v2zm0-4h2V8h-2v2zm0-4h2V4h-2v2z"/></svg>
+);
+
+export const AscensionIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M16 13h-3V4h-2v9H8l4 4 4-4zM4 19v2h16v-2H4z"/></svg>
+);
+
+// Stat Icons
+export const XPIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M12 2l2.37 7.26h7.63l-6.16 4.48 2.36 7.26L12 16.52l-6.2 4.48 2.36-7.26-6.16-4.48h7.63L12 2z"/></svg>
+);
+
+export const LuckIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M16.5 6c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zm-9 0C5.57 6 4 7.57 4 9.5S5.57 13 7.5 13s3.5-1.57 3.5-3.5S9.43 6 7.5 6zm0 9C5.57 15 4 16.57 4 18.5S5.57 22 7.5 22s3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zm9 0c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5z"/></svg>
 );

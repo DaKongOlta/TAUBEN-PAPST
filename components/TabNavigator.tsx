@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ActiveTab } from '../types';
-import { CampaignIcon, TycoonIcon, PigeonIcon, MapIcon, SkillsIcon, ChroniclesIcon, DivineFavorIcon, IntegrationsIcon, FactionsIcon } from './icons';
+import { CampaignIcon, TycoonIcon, PigeonIcon, MapIcon, SkillsIcon, ChroniclesIcon, DivineFavorIcon, IntegrationsIcon, FactionsIcon, MinigamesIcon, AscensionIcon, RoostIcon } from './icons';
 
 interface TabNavigatorProps {
   activeTab: ActiveTab;
@@ -9,18 +9,21 @@ interface TabNavigatorProps {
 
 const TABS: { id: ActiveTab, label: string, icon: React.FC<{className?: string}> }[] = [
     { id: 'Campaign', label: 'Campaign', icon: CampaignIcon },
+    { id: 'Roost', label: 'Roost', icon: RoostIcon },
     { id: 'Economy', label: 'Economy', icon: TycoonIcon },
     { id: 'Followers', label: 'Followers', icon: PigeonIcon },
     { id: 'Map', label: 'Map', icon: MapIcon },
     { id: 'Skills', label: 'Skills', icon: SkillsIcon },
     { id: 'Factions', label: 'Factions', icon: FactionsIcon },
+    { id: 'Minigames', label: 'Minigames', icon: MinigamesIcon },
     { id: 'Integrations', label: 'Integrations', icon: IntegrationsIcon },
     { id: 'Chronicles', label: 'Chronicles', icon: ChroniclesIcon },
+    { id: 'Prestige', label: 'Prestige', icon: AscensionIcon },
 ];
 
 export const TabNavigator: React.FC<TabNavigatorProps> = ({ activeTab, onTabChange }) => {
   return (
-    <nav className="flex items-center justify-center p-1 bg-stone-950/50 border-b-2 border-stone-700 z-30 gap-2">
+    <nav className="flex items-center justify-center p-1 bg-stone-950/50 border-b-2 border-stone-700 z-30 gap-1 flex-wrap">
       {TABS.map(tab => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;

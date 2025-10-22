@@ -1,5 +1,5 @@
 // constants.ts
-import type { Card, RivalSect, BureaucracyRequest, Building, Follower } from './types';
+import type { Card, RivalSect, BureaucracyRequest, Building, Follower, FollowerPersonality } from './types';
 import { ResourceType } from './types';
 
 // Gameplay constants
@@ -8,6 +8,8 @@ export const STARTING_CRUMBS = 25; // Increased starting crumbs for tycoon mode
 export const STARTING_FOLLOWERS = 1;
 export const STARTING_MORALE = 75;
 export const STARTING_DIVINE_FAVOR = 0;
+export const STARTING_BREAD_COIN = 0;
+export const STARTING_ASCENSION_POINTS = 0;
 export const BASE_FAITH_PER_SECOND = 0.5;
 export const BASE_CRUMBS_PER_FOLLOWER = 0.1;
 
@@ -22,7 +24,7 @@ export const ALL_CARDS: { [id: string]: Card } = {
     art: '✨',
     description: 'A small blessing to bolster the flock.',
     cost: { amount: 5, resource: ResourceType.Faith },
-    effects: [{ type: 'GAIN_MORALE', value: 10 }],
+    effects: [{ type: 'GAIN_MORALE', value: 10 }, { type: 'GAIN_XP', value: 5 }],
   },
   'card-002': {
     id: 'card-002',
@@ -31,7 +33,7 @@ export const ALL_CARDS: { [id: string]: Card } = {
     art: '🧐',
     description: 'Command your followers to search for sustenance.',
     cost: { amount: 0, resource: ResourceType.Crumbs },
-    effects: [{ type: 'GAIN_CRUMBS', value: 10 }],
+    effects: [{ type: 'GAIN_CRUMBS', value: 10 }, { type: 'GAIN_XP', value: 2 }],
   },
   'card-003': {
     id: 'card-003',
@@ -40,7 +42,7 @@ export const ALL_CARDS: { [id: string]: Card } = {
     art: '🗣️',
     description: 'Recruit a new follower with a powerful speech.',
     cost: { amount: 10, resource: ResourceType.Faith },
-    effects: [{ type: 'GAIN_FOLLOWERS', value: 1 }],
+    effects: [{ type: 'GAIN_FOLLOWERS', value: 1 }, { type: 'GAIN_XP', value: 10 }],
   },
   'card-004': {
     id: 'card-004',
@@ -49,7 +51,43 @@ export const ALL_CARDS: { [id: string]: Card } = {
     art: '💥',
     description: 'Inflict a small amount of holy damage to the rival sect.',
     cost: { amount: 15, resource: ResourceType.Faith },
-    effects: [{ type: 'DAMAGE_RIVAL', value: 10 }],
+    effects: [{ type: 'DAMAGE_RIVAL', value: 10 }, { type: 'GAIN_XP', value: 8 }],
+  },
+  'card-005': {
+    id: 'card-005',
+    name: 'Holy Smokescreen',
+    type: 'Ritual',
+    art: '🌫️',
+    description: 'Obscure the rival\'s vision, reducing their Heresy generation for 20 turns.',
+    cost: { amount: 25, resource: ResourceType.Faith },
+    effects: [{ type: 'RIVAL_HERESY_RATE_MULTIPLIER', value: 0.5, duration: 20 }, { type: 'GAIN_XP', value: 15 }]
+  },
+  'card-006': {
+    id: 'card-006',
+    name: 'Lucky Peck',
+    type: 'Conflict',
+    art: '🍀',
+    description: 'A peck guided by fate. Deals 5 base damage + your total Luck.',
+    cost: { amount: 10, resource: ResourceType.Faith },
+    effects: [{ type: 'LUCKY_DAMAGE_RIVAL', value: 5 }, { type: 'GAIN_XP', value: 10 }],
+  },
+  'card-007': {
+    id: 'card-007',
+    name: 'Mysterious Egg',
+    type: 'Miracle',
+    art: '🥚',
+    description: 'A strange, shimmering egg appears. What could be inside?',
+    cost: { amount: 20, resource: ResourceType.Crumbs },
+    effects: [{ type: 'GAIN_LOOTBOX', value: 'coocoo_crate' }, { type: 'GAIN_XP', value: 20 }],
+  },
+  'card-008': {
+    id: 'card-008',
+    name: 'Recruiter\'s Rally',
+    type: 'Propaganda',
+    art: '📣',
+    description: 'Your reputation precedes you. Gain 1 follower for every 2 levels you have.',
+    cost: { amount: 50, resource: ResourceType.Faith },
+    effects: [{ type: 'GAIN_FOLLOWERS_BY_LEVEL', value: 0.5 }, { type: 'GAIN_XP', value: 25 }],
   },
 };
 
@@ -59,6 +97,7 @@ export const initialDeck: Card[] = [
   ALL_CARDS['card-002'],
   ALL_CARDS['card-002'],
   ALL_CARDS['card-003'],
+  ALL_CARDS['card-007'], // Start with a loot box card
 ];
 
 // Rivals
@@ -70,6 +109,7 @@ export const RIVAL_SECTS: RivalSect[] = [
         hand: [],
         deck: initialDeck.slice(0, 3), // Simplified
         lastActionTimestamp: 0,
+        buffs: [],
     }
 ];
 export const RIVAL_ACTION_INTERVAL = 5000; // ms
@@ -89,38 +129,84 @@ export const TYCOON_BUILDINGS: Omit<Building, 'level'>[] = [
     {
         id: 'bld-crumb-silo',
         name: 'Crumb Silo',
-        description: 'A holy silo that passively generates crumbs from blessed atmospheric dust.',
+        description: 'Passively generates crumbs and improves follower scrounging efficiency.',
         art: '🍞🏢',
         productionType: ResourceType.Crumbs,
         baseProduction: 0.5,
         baseCost: 25,
         costResource: ResourceType.Crumbs,
         costMultiplier: 1.15,
+        buff: {
+            type: 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER',
+            value: 0.02, // 2% boost to follower crumb production per level
+        }
     },
     {
         id: 'bld-faith-spire',
         name: 'Faith Spire',
-        description: 'A towering antenna that broadcasts your divine cooing, inspiring faith across the city.',
+        description: 'Broadcasts divine cooing, inspiring the city and boosting all faith generation.',
         art: '🙏📡',
         productionType: ResourceType.Faith,
         baseProduction: 0.2,
         baseCost: 50,
         costResource: ResourceType.Crumbs,
         costMultiplier: 1.2,
+        buff: {
+            type: 'FAITH_GAIN_MULTIPLIER',
+            value: 0.05, // 5% boost to all faith generation per level
+        }
+    },
+    {
+        id: 'bld-bread-coin-mint',
+        name: 'Bread Coin Mint',
+        description: 'A bizarre contraption that converts crumbs into highly volatile "Bread Coins".',
+        art: '🪙🏭',
+        productionType: ResourceType.BreadCoin,
+        baseProduction: 0.01,
+        baseCost: 100,
+        costResource: ResourceType.Crumbs,
+        costMultiplier: 1.5,
     },
 ];
 
 // New Follower Management
 const PIGEON_NAMES = ['Pecky', 'Coo-lin', 'Wingston', 'Bread-ley', 'Skybert', 'Ruffles', 'Pidge', 'Featherick'];
+const PERSONALITIES: FollowerPersonality[] = ['Devout', 'Lazy', 'Rebel', 'Standard'];
+
 export const createInitialFollower = (): Follower => {
     const name = PIGEON_NAMES[Math.floor(Math.random() * PIGEON_NAMES.length)];
-    return {
-        id: `follower-${Date.now()}-${Math.random()}`,
-        name: `${name} #${Math.floor(Math.random() * 100)}`,
+    const personality = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
+    
+    let baseStats = {
         devotion: 50 + Math.floor(Math.random() * 20),
         chaosIndex: 10 + Math.floor(Math.random() * 10),
         loyalty: 60 + Math.floor(Math.random() * 20),
         productivity: 1.0,
+    };
+
+    switch (personality) {
+        case 'Devout':
+            baseStats.devotion += 20;
+            baseStats.loyalty += 10;
+            break;
+        case 'Lazy':
+            baseStats.productivity = 0.8;
+            break;
+        case 'Rebel':
+            baseStats.loyalty -= 20;
+            baseStats.productivity = 1.1;
+            break;
+    }
+
+    return {
+        id: `follower-${Date.now()}-${Math.random()}`,
+        name: `${name} #${Math.floor(Math.random() * 100)}`,
+        devotion: Math.max(0, Math.min(100, baseStats.devotion)),
+        chaosIndex: Math.max(0, Math.min(100, baseStats.chaosIndex)),
+        loyalty: Math.max(0, Math.min(100, baseStats.loyalty)),
+        productivity: baseStats.productivity,
         animationState: 'idle',
+        personality: personality,
+        emotions: { joy: 50, fear: 10 },
     };
 };

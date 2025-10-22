@@ -29,6 +29,22 @@ export const BossPanel: React.FC<BossPanelProps> = ({ boss }) => {
                 </div>
             </div>
         </div>
+        <div className="mt-2 border-t border-red-500/30 pt-2">
+            {boss.buffs.length > 0 && (
+                <div className="flex justify-center items-center gap-2 text-xs text-red-200">
+                    <span className="font-bold">EFFECTS:</span>
+                    <div className="flex flex-wrap gap-1">
+                        {boss.buffs.map(buff => (
+                            <Tooltip key={buff.id} content={`${buff.source} (${buff.duration} turns left)`} position="bottom">
+                                <div className="bg-black/40 px-2 py-1 rounded cursor-help">
+                                    {buff.type === 'RIVAL_HERESY_RATE_MULTIPLIER' && `Heresy x${buff.value}`}
+                                </div>
+                            </Tooltip>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
         <div className="mt-2 text-center">
             <h4 className="text-sm font-bold text-red-200/80">SPECIAL ABILITIES</h4>
             <div className="flex justify-center gap-4 text-xs mt-1">

@@ -1,6 +1,38 @@
 // factions.ts
-import type { Faction, Boss } from './types';
+import type { Faction, Boss, RivalSect, Treaty } from './types';
 import { initialDeck } from './constants';
+import { ResourceType } from './types';
+
+const RAT_TREATIES: Treaty[] = [
+    {
+        id: 'treaty-rats-01',
+        name: 'Crumb Scavenging Pact',
+        description: 'The rats share their secret scrounging routes. Increases crumb production from followers by 15%.',
+        effect: { type: 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER', value: 0.15 },
+        isActive: false,
+    }
+];
+
+const SEAGULL_TREATIES: Treaty[] = [
+    {
+        id: 'treaty-gulls-01',
+        name: 'Sky Patrol Treaty',
+        description: 'The seagulls agree to not interfere with your sermons. Increases all Faith generation by 10%.',
+        effect: { type: 'FAITH_GAIN_MULTIPLIER', value: 0.10 },
+        isActive: false,
+    }
+];
+
+const CROW_TREATIES: Treaty[] = [
+     {
+        id: 'treaty-crows-01',
+        name: 'Shared Hoard',
+        description: 'The crows contribute a few shiny things... which turn out to be crumbs. Passively grants +0.2 crumbs/sec.',
+        effect: { type: 'CRUMB_GAIN_ADD', value: 0.2 },
+        isActive: false,
+    }
+];
+
 
 export const FACTIONS: { [id: string]: Faction } = {
     'rats': {
@@ -12,6 +44,7 @@ export const FACTIONS: { [id: string]: Faction } = {
         isHostileByDefault: true,
         power: 100,
         dialogueId: 'rats-intro',
+        treaties: RAT_TREATIES,
     },
     'seagulls': {
         id: 'seagulls',
@@ -22,6 +55,7 @@ export const FACTIONS: { [id: string]: Faction } = {
         isHostileByDefault: false,
         power: 150,
         dialogueId: 'seagulls-intro',
+        treaties: SEAGULL_TREATIES,
     },
     'crows': {
         id: 'crows',
@@ -32,7 +66,18 @@ export const FACTIONS: { [id: string]: Faction } = {
         isHostileByDefault: false,
         power: 120,
         dialogueId: 'crows-intro',
+        treaties: CROW_TREATIES,
     }
+};
+
+export const CORVID_RIVAL: RivalSect = {
+    name: 'The Corvid Collective',
+    faith: 120,
+    heresyPerSecond: 0.5,
+    hand: [],
+    deck: [],
+    lastActionTimestamp: 0,
+    buffs: [],
 };
 
 export const SEAGULL_BOSS: Boss = {
@@ -48,4 +93,5 @@ export const SEAGULL_BOSS: Boss = {
         { id: 'sky-dive', name: 'Sky Dive Peck', description: 'A devastating attack from above.', cooldown: 5, lastUsed: 0 },
         { id: 'gale-force', name: 'Gale Force Wings', description: 'Blows a card from the player\'s hand.', cooldown: 8, lastUsed: 0 },
     ],
+    buffs: [],
 };

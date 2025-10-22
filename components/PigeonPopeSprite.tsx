@@ -2,9 +2,10 @@ import React from 'react';
 
 interface PigeonPopeSpriteProps {
   state: 'idle' | 'pecking';
+  hatColor?: string;
 }
 
-export const PigeonPopeSprite: React.FC<PigeonPopeSpriteProps> = ({ state }) => {
+export const PigeonPopeSprite: React.FC<PigeonPopeSpriteProps> = ({ state, hatColor = '#fefae0' }) => {
   const containerAnimation = state === 'idle' ? 'animate-pope-idle' : '';
 
   return (
@@ -25,7 +26,7 @@ export const PigeonPopeSprite: React.FC<PigeonPopeSpriteProps> = ({ state }) => 
             <path d="M 26 42 L 20 45 L 28 46 Z" fill="#fca5a5" stroke="#ef4444" strokeWidth="1" />
             {/* Hat */}
             <g className={state === 'idle' ? 'animate-pope-hat-bob' : ''}>
-                <path d="M 38 30 C 30 32 30 20 38 10 C 46 20 46 32 38 30 Z" fill="#fefae0" stroke="#dda15e" strokeWidth="1.5" />
+                <path d="M 38 30 C 30 32 30 20 38 10 C 46 20 46 32 38 30 Z" fill={hatColor} stroke="#dda15e" strokeWidth="1.5" />
                 <path d="M 32 18 L 44 18" stroke="#bc6c25" strokeWidth="2" />
                 <path d="M 38 30 L 38 10" stroke="#bc6c25" strokeWidth="1.5" />
             </g>

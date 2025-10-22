@@ -41,6 +41,7 @@
       background-color: #1c1917; /* stone-900 */
       color: #fafaf9; /* stone-50 */
       overflow: hidden; /* Prevent scrollbars from layout shifts */
+      background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80"%3E%3Crect fill="%231c1917" width="80" height="80"%3E%3C/rect%3E%3Cg fill-opacity="0.05"%3E%3Crect fill="%23292524" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="10" y="10" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="20" y="20" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="30" y="30" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="40" y="40" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="50" y="50" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="60" y="60" width="11" height="11"%3E%3C/rect%3E%3Crect fill="%23292524" x="70" y="70" width="11" height="11"%3E%3C/rect%3E%3C/g%3E%3C/svg%3E');
     }
 
     /* Icons */
@@ -143,7 +144,19 @@
         animation: follower-wing-flap 0.5s ease-in-out infinite;
         animation-delay: var(--anim-delay, 0s);
     }
-    
+
+    @keyframes follower-celebrate-bob {
+      0%, 100% { transform: translateY(0) rotate(2deg); }
+      50% { transform: translateY(-5px) rotate(-2deg); }
+    }
+    .animate-follower-celebrate {
+        animation: follower-celebrate-bob 0.4s infinite ease-in-out;
+    }
+    .animate-follower-celebrate .pigeon-wing {
+        transform-origin: 22px 30px;
+        animation: follower-wing-flap 0.3s ease-in-out infinite;
+    }
+
     @keyframes follower-chaotic {
         0%, 100% { transform: translate(0, 0) rotate(0deg); }
         20% { transform: translate(-2px, 1px) rotate(-5deg); }
@@ -431,6 +444,28 @@
     }
     .draggable-action:hover {
         background-color: #57534e; /* stone-600 */
+    }
+
+    /* Campaign View Background */
+    @keyframes bg-pan {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .campaign-bg {
+      background-image:
+        radial-gradient(ellipse at 80% 20%, rgba(252, 211, 77, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(96, 165, 250, 0.1) 0%, transparent 50%);
+      animation: bg-pan 30s ease infinite;
+    }
+
+    /* Loot Box */
+    @keyframes loot-box-shimmer {
+      0%, 100% { box-shadow: 0 0 5px #fef08a, 0 0 10px #fef08a; transform: scale(1); }
+      50% { box-shadow: 0 0 15px #fde047, 0 0 30px #fde047; transform: scale(1.05); }
+    }
+    .animate-loot-box-shimmer {
+      animation: loot-box-shimmer 3s infinite ease-in-out;
     }
 
   </style>

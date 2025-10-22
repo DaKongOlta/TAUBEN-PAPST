@@ -54,6 +54,20 @@ export const RivalSectPanel: React.FC<RivalSectPanelProps> = ({ rival, lastActio
                 </div>
             </Tooltip>
         </div>
+        {rival.buffs.length > 0 && (
+            <div className="mt-2 text-xs">
+                <h5 className="font-bold text-red-300/70">EFFECTS</h5>
+                <div className="flex flex-wrap gap-1 mt-1">
+                    {rival.buffs.map(buff => (
+                        <Tooltip key={buff.id} content={`${buff.source} (${buff.duration} turns left)`} position="bottom">
+                            <div className="bg-black/40 px-2 py-1 rounded cursor-help text-white">
+                                {buff.type === 'RIVAL_HERESY_RATE_MULTIPLIER' && `Heresy x${buff.value}`}
+                            </div>
+                        </Tooltip>
+                    ))}
+                </div>
+            </div>
+        )}
         <div className="mt-3">
           <h5 className="text-center text-xs text-red-300/70 font-bold">HAND</h5>
           <div className="flex justify-center items-center gap-1 h-10">

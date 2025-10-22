@@ -4,6 +4,42 @@ export enum ResourceType {
   Faith = 'Faith',
   Crumbs = 'Crumbs',
   DivineFavor = 'DivineFavor',
+  BreadCoin = 'BreadCoin',
+  AscensionPoints = 'AscensionPoints',
+}
+
+export interface PlayerStats {
+  level: number;
+  xp: number;
+  xpToNextLevel: number;
+  luck: number;
+}
+
+export interface PopeCustomization {
+  hatColor: string;
+}
+
+export interface Relic {
+  id: string;
+  name: string;
+  art: string;
+  description: string;
+  effect: GameEffect;
+}
+
+export interface LootBox {
+  id: string;
+  name: string;
+  art: string;
+  description: string;
+}
+
+export interface RivalBuff {
+  id: string;
+  type: string; // e.g. 'HERESY_RATE_MULTIPLIER'
+  value: number;
+  duration: number; // in game turns
+  source: string; // e.g. "Card: Divine Smog"
 }
 
 export interface CardCost {
@@ -14,8 +50,9 @@ export interface CardCost {
 export type CardType = 'Miracle' | 'Propaganda' | 'Ritual' | 'Conflict';
 
 export interface GameEffect {
-    type: string; // e.g., 'GAIN_FAITH', 'GAIN_FOLLOWERS', 'DAMAGE_RIVAL', 'CRUMB_GAIN_MULTIPLIER', 'IMPROVE_RAT_RELATIONS'
-    value: number;
+    type: string; // e.g., 'GAIN_FAITH', 'GAIN_XP', 'GAIN_RELIC', 'GAIN_LOOTBOX'
+    value: number | string; // Can be a number or an ID (e.g., relicId)
+    duration?: number;
 }
 
 export interface Card {
@@ -49,6 +86,7 @@ export interface RivalSect {
   hand: Card[];
   deck: Card[];
   lastActionTimestamp: number;
+  buffs: RivalBuff[];
 }
 
 export enum WeatherType {
@@ -104,7 +142,7 @@ export interface Quest {
   reward: QuestReward;
 }
 
-export type FollowerAnimationState = 'idle' | 'pecking' | 'looking' | 'flapping' | 'chaotic';
+export type FollowerAnimationState = 'idle' | 'pecking' | 'looking' | 'flapping' | 'chaotic' | 'celebrating';
 
 export interface BureaucracyRequest {
     id: string;
@@ -124,9 +162,18 @@ export interface Building {
   costResource: ResourceType;
   costMultiplier: number;
   level: number;
+  buff?: {
+    type: string; // e.g., 'FAITH_GAIN_MULTIPLIER', 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER'
+    value: number; // The amount of buff per level, e.g., 0.05 for a 5% boost per level
+  };
 }
 
 // UI Restructure and Features
+export type FollowerPersonality = 'Devout' | 'Lazy' | 'Rebel' | 'Standard';
+export interface FollowerEmotions {
+    joy: number; // 0-100
+    fear: number; // 0-100
+}
 
 export interface Follower {
     id: string;
@@ -136,6 +183,8 @@ export interface Follower {
     loyalty: number; // 0-100, low loyalty leads to revolts or leaving
     productivity: number; // base crumb generation multiplier
     animationState: FollowerAnimationState;
+    personality: FollowerPersonality;
+    emotions: FollowerEmotions;
 }
 
 export type SkillTreeType = 'Automation' | 'Propaganda' | 'Combat' | 'Memes';
@@ -169,7 +218,7 @@ export interface MapSector {
     activeEvent?: { id: string, name: string, art: string }; // For seagull swarms, etc.
 }
 
-export type ActiveTab = 'Campaign' | 'Economy' | 'Followers' | 'Map' | 'Skills' | 'Integrations' | 'Factions' | 'Chronicles';
+export type ActiveTab = 'Campaign' | 'Economy' | 'Followers' | 'Map' | 'Skills' | 'Integrations' | 'Factions' | 'Chronicles' | 'Minigames' | 'Prestige' | 'Roost';
 
 export type RouteType = 'Pilgrim' | 'Antenna' | 'CrumbTransport';
 
@@ -208,6 +257,14 @@ export interface StreamDeckAction {
 // Factions & Diplomacy
 export type FactionId = 'rats' | 'seagulls' | 'crows';
 
+export interface Treaty {
+    id: string;
+    name: string;
+    description: string;
+    effect: GameEffect;
+    isActive: boolean;
+}
+
 export interface Faction {
     id: FactionId;
     name: string;
@@ -217,6 +274,7 @@ export interface Faction {
     isHostileByDefault: boolean;
     power: number;
     dialogueId: string;
+    treaties: Treaty[];
 }
 
 // Dogmas
@@ -261,4 +319,37 @@ export interface Boss extends RivalSect {
       cooldown: number; // in turns
       lastUsed: number;
     }[];
+}
+
+export interface GameState {
+    faith: number;
+    crumbs: number;
+    followers: Follower[];
+    divineFavor: number;
+    morale: number;
+    breadCoin: number;
+    ascensionPoints: number;
+    inflation: number;
+    deck: Card[];
+    hand: Card[];
+    discard: Card[];
+    rival: RivalSect;
+    isRivalDefeated: boolean;
+    activeBoss: Boss | null;
+    isBossDefeated: boolean;
+    buildings: Building[];
+    activeQuestId: string | undefined;
+    questProgress: Partial<Record<QuestObjectiveType, number>>;
+    skills: Record<string, Skill>;
+    sectors: MapSector[];
+    routes: MapRoute[];
+    factions: Record<string, Faction>;
+    activeDogma: Dogma | null;
+    chronicle: ChronicleEntry[];
+    gameTurn: number;
+    playerStats: PlayerStats;
+    relics: Relic[];
+    lootBoxes: LootBox[];
+    popeCustomization: PopeCustomization;
+    streamDeckConfig: Array<StreamDeckAction | null>;
 }
