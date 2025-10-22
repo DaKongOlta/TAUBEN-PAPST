@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import type {
   Card, RivalSect, Building, Follower, ActiveTab, GameEvent, ActiveWeatherEvent, Quest, Skill, MapSector, MapRoute, StreamDeckAction, Faction, Dogma, ChronicleEntry, DialogueNode, Boss, GameEffect, RivalBuff, GameState, PlayerStats, Relic, LootBox, PopeCustomization, DialogueOption, FactionId, AppState, FactionAIAction
@@ -122,6 +117,8 @@ const App: React.FC = () => {
   const [activeDialogue, setActiveDialogue] = useState<DialogueNode | null>(null);
   const [isDogmaSelectionVisible, setIsDogmaSelectionVisible] = useState(false);
   const [incomingMessages, setIncomingMessages] = useState<DialogueNode[]>([]);
+  const [triggeredMilestones, setTriggeredMilestones] = useState<Set<string>>(new Set());
+
 
   // Integrations
   const [streamDeckConfig, setStreamDeckConfig] = useState<Array<StreamDeckAction | null>>(Array(STREAM_DECK_KEY_COUNT).fill(null));
@@ -133,13 +130,14 @@ const App: React.FC = () => {
       faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation,
       deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings,
       activeQuestId: activeQuest?.id, questProgress, skills, sectors, routes, factions,
-      activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages
+      activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages,
+      triggeredMilestones: Array.from(triggeredMilestones),
     };
     localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(gameStateSnapshot));
     setHasSaveData(true);
     logChronicle("Progress has been saved to the sacred scrolls.");
     playSound('upgrade');
-  }, [faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages]);
+  }, [faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages, triggeredMilestones]);
 
   const loadGame = useCallback(() => {
     const savedData = localStorage.getItem(SAVE_GAME_KEY);
@@ -176,6 +174,7 @@ const App: React.FC = () => {
       setPopeCustomization(gameState.popeCustomization);
       setStreamDeckConfig(gameState.streamDeckConfig);
       setIncomingMessages(gameState.incomingMessages || []);
+      setTriggeredMilestones(new Set(gameState.triggeredMilestones || []));
 
       setAppState('playing');
       stopMusic('music_theme');
@@ -253,6 +252,7 @@ const App: React.FC = () => {
     setChronicle([]);
     setGameTurn(0);
     setIncomingMessages([]);
+    setTriggeredMilestones(new Set());
     
     setAppState('playing');
     stopMusic('music_theme');
@@ -266,7 +266,7 @@ const App: React.FC = () => {
       // Apply global multipliers from alliances
       let xpMultiplier = 1.0;
       let combatMultiplier = 1.0;
-      // FIX: Explicitly type `f` as `Faction` to resolve type inference issue with Object.values.
+      // FIX: Explicitly type `f` as `Faction` to resolve properties like 'diplomaticStatus' not existing on type 'unknown'.
       Object.values(factions).forEach((f: Faction) => {
         if (f.diplomaticStatus === 'Alliance' && f.allianceBonus) {
           if (f.allianceBonus.type === 'GLOBAL_XP_GAIN_MULTIPLIER') {
@@ -278,6 +278,15 @@ const App: React.FC = () => {
         }
       });
       
+      const dealDamageToTarget = (amount: number) => {
+        const totalDamage = Math.round(amount * combatMultiplier);
+        if (activeBoss) {
+            setActiveBoss(b => b ? { ...b, faith: Math.max(0, b.faith - totalDamage) } : null);
+        } else {
+            setRival(r => ({ ...r, faith: Math.max(0, r.faith - totalDamage) }));
+        }
+      };
+
       switch(effect.type) {
         case 'GAIN_MORALE': setMorale(m => Math.min(100, m + (effect.value as number))); break;
         case 'GAIN_CRUMBS': setCrumbs(c => c + (effect.value as number)); break;
@@ -304,23 +313,26 @@ const App: React.FC = () => {
             }
             break;
         }
-        case 'DAMAGE_RIVAL': {
-            const totalDamage = Math.round((effect.value as number) * combatMultiplier);
-            if (activeBoss) {
-                setActiveBoss(b => b ? { ...b, faith: Math.max(0, b.faith - totalDamage) } : null);
-            } else {
-                setRival(r => ({ ...r, faith: Math.max(0, r.faith - totalDamage) }));
-            }
+        case 'DAMAGE_RIVAL': dealDamageToTarget(effect.value as number); break;
+        case 'LUCKY_DAMAGE_RIVAL': {
+            const totalDamage = (effect.value as number) + playerStats.luck;
+            dealDamageToTarget(totalDamage);
+            logChronicle(`A lucky peck dealt ${Math.round(totalDamage * combatMultiplier)} damage!`);
             break;
         }
-        case 'LUCKY_DAMAGE_RIVAL': {
-            const totalDamage = Math.round(((effect.value as number) + playerStats.luck) * combatMultiplier);
-             if (activeBoss) {
-                setActiveBoss(b => b ? { ...b, faith: Math.max(0, b.faith - totalDamage) } : null);
-            } else {
-                setRival(r => ({ ...r, faith: Math.max(0, r.faith - totalDamage) }));
-            }
-            logChronicle(`A lucky peck dealt ${totalDamage} damage!`);
+        case 'PIOUS_PECK_DAMAGE': {
+            const devoutFollowers = followers.filter(f => f.personality === 'Devout').length;
+            const totalDamage = (effect.value as number) + (devoutFollowers * 2);
+            dealDamageToTarget(totalDamage);
+            logChronicle(`A pious peck, strengthened by ${devoutFollowers} devout, dealt ${Math.round(totalDamage * combatMultiplier)} damage!`);
+            break;
+        }
+        case 'SWARM_DAMAGE': dealDamageToTarget(followers.length); break;
+        case 'FAITH_FROM_BUILDINGS': {
+            const totalBuildingLevels = buildings.reduce((sum, b) => sum + b.level, 0);
+            const faithGained = totalBuildingLevels * (effect.value as number);
+            setFaith(f => f + faithGained);
+            logChronicle(`Bureaucracy converted to belief, gaining ${faithGained.toFixed(0)} Faith.`);
             break;
         }
         case 'RIVAL_HERESY_RATE_MULTIPLIER':
@@ -371,7 +383,7 @@ const App: React.FC = () => {
             break;
         }
       }
-  }, [activeBoss, logChronicle, playerStats.level, playerStats.luck, relics, factions]);
+  }, [activeBoss, logChronicle, playerStats.level, playerStats.luck, relics, factions, followers, buildings]);
 
   const handlePlayCard = useCallback((card: Card) => {
     let faithCost = card.cost.resource === 'Faith' ? Math.ceil(card.cost.amount * inflation) : 0;
@@ -594,6 +606,7 @@ const App: React.FC = () => {
       let totalFaithMultiplier = 1.0;
       let totalFollowerCrumbMultiplier = 1.0;
       let crumbGainAdd = 0;
+      let globalMoraleBoost = 0;
 
       const allBuffSources = [...buildings.filter(b => b.level > 0), ...relics];
 
@@ -605,10 +618,12 @@ const App: React.FC = () => {
               if (effect.type === 'FAITH_GAIN_MULTIPLIER') totalFaithMultiplier += buffValue;
               if (effect.type === 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER') totalFollowerCrumbMultiplier += buffValue;
               if (effect.type === 'CRUMB_GAIN_ADD') crumbGainAdd += buffValue;
+              if (effect.type === 'GLOBAL_MORALE_BOOST') globalMoraleBoost += buffValue;
           }
       });
       
-      // Fix: Explicitly type `faction` as `Faction` to resolve type inference issue with Object.values.
+      let globalHeresyReduction = 0;
+      // FIX: Explicitly type `faction` as `Faction` to resolve properties like 'treaties' not existing on type 'unknown'.
       Object.values(factions).forEach((faction: Faction) => {
         // Apply treaty bonuses
         faction.treaties.forEach(treaty => {
@@ -617,6 +632,7 @@ const App: React.FC = () => {
                 if (effect.type === 'FAITH_GAIN_MULTIPLIER') totalFaithMultiplier += (effect.value as number);
                 if (effect.type === 'FOLLOWER_CRUMB_PRODUCTION_MULTIPLIER') totalFollowerCrumbMultiplier += (effect.value as number);
                 if (effect.type === 'CRUMB_GAIN_ADD') crumbGainAdd += (effect.value as number);
+                if (effect.type === 'GLOBAL_HERESY_REDUCTION') globalHeresyReduction += (effect.value as number);
             }
         });
         // Apply ALLIANCE bonuses
@@ -637,7 +653,7 @@ const App: React.FC = () => {
       let breadCoinPerSecond = 0;
 
       buildings.forEach(b => {
-        if (b.level > 0) {
+        if (b.level > 0 && b.productionType && b.baseProduction) {
           if (b.productionType === ResourceType.Faith) faithPerSecond += b.baseProduction * b.level;
           if (b.productionType === ResourceType.Crumbs) crumbsPerSecond += b.baseProduction * b.level;
           if (b.productionType === ResourceType.BreadCoin) breadCoinPerSecond += b.baseProduction * b.level;
@@ -662,12 +678,13 @@ const App: React.FC = () => {
       }
       
       let baseHeresy = (activeBoss ? activeBoss.heresyPerSecond : (isRivalDefeated ? 0 : rival.heresyPerSecond));
-      let heresyDrain = baseHeresy * heresyMultiplier;
+      let heresyDrain = (baseHeresy * heresyMultiplier) * (1 - globalHeresyReduction);
 
-      setMorale(m => Math.max(0, m - heresyDrain / 10));
+
+      setMorale(m => Math.max(0, Math.min(100 + globalMoraleBoost, m - heresyDrain / 10)));
     }, 100);
     return () => clearInterval(gameTick);
-  }, [appState, followers.length, buildings, rival, isRivalDefeated, activeDogma, activeBoss, relics, factions, logChronicle]);
+  }, [appState, followers, buildings, rival, isRivalDefeated, activeDogma, activeBoss, relics, factions, logChronicle]);
   
   // Faction AI Tick
   useEffect(() => {
@@ -678,7 +695,8 @@ const App: React.FC = () => {
             faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation,
             deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings,
             activeQuestId: activeQuest?.id, questProgress, skills, sectors, routes, factions,
-            activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages
+            activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, incomingMessages,
+            triggeredMilestones: Array.from(triggeredMilestones),
         };
         const aiActions = runFactionAI(gameStateSnapshot);
         if (aiActions.length > 0) {
@@ -686,7 +704,50 @@ const App: React.FC = () => {
         }
     }, 5000); // Faction AI runs every 5 seconds
     return () => clearInterval(aiTick);
-  }, [appState, faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, executeFactionAIAction, incomingMessages]);
+  }, [appState, faith, crumbs, followers, divineFavor, morale, breadCoin, ascensionPoints, inflation, deck, hand, discard, rival, isRivalDefeated, activeBoss, isBossDefeated, buildings, activeQuest, questProgress, skills, sectors, routes, factions, activeDogma, chronicle, gameTurn, playerStats, relics, lootBoxes, popeCustomization, streamDeckConfig, executeFactionAIAction, incomingMessages, triggeredMilestones]);
+
+  // Milestone Dialogue Triggers
+  useEffect(() => {
+    if (appState !== 'playing' || incomingMessages.length > 0 || activeDialogue) return;
+
+    const triggerMilestone = (id: string) => {
+        if (!triggeredMilestones.has(id) && DIALOGUES[id]) {
+            setIncomingMessages(im => [...im, DIALOGUES[id]]);
+            setTriggeredMilestones(current => new Set(current).add(id));
+            playSound('event');
+            return true; // Indicates a trigger occurred
+        }
+        return false;
+    };
+
+    // --- RAT MILESTONES ---
+    if (factions.rats.relationship > 20) {
+        if (triggerMilestone('rats-friendly-approach')) return;
+    }
+    if (factions.rats.relationship < -20) {
+        if (triggerMilestone('rats-hostile-warning')) return;
+    }
+
+    // --- SEAGULL MILESTONES ---
+    if (isRivalDefeated) {
+        if (triggerMilestone('seagulls-notice-victory')) return;
+    }
+    const radioTowerUnlocked = sectors.find(s => s.id === 'sector-4' && s.isUnlocked);
+    if (radioTowerUnlocked) {
+        if (triggerMilestone('seagulls-radio-tower-dispute')) return;
+    }
+    
+    // --- CROW MILESTONES ---
+    if (relics.length >= 3) {
+        if (triggerMilestone('crows-relic-interest')) return;
+    }
+    // FIX: Explicitly type `s` as `Skill` to resolve properties not existing on type 'unknown'.
+    const hasMemeSkill = Object.values(skills).some((s: Skill) => s.tree === 'Memes' && s.unlocked);
+    if (hasMemeSkill) {
+        if (triggerMilestone('crows-meme-confusion')) return;
+    }
+
+  }, [appState, factions, isRivalDefeated, sectors, relics, skills, triggeredMilestones, incomingMessages.length, activeDialogue]);
 
   useEffect(() => { /* Game saving interval */
     if (appState !== 'playing') return;

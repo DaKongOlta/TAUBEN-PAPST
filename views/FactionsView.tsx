@@ -66,8 +66,13 @@ export const FactionsView: React.FC<FactionsViewProps> = ({ factions, onStartDia
                 {/* Fix: Explicitly type `faction` as `Faction` to resolve type inference issue with Object.values. */}
                 {Object.values(factions).map((faction: Faction) => {
                     const activeTreaty = faction.treaties.find(t => t.isActive);
+                    const availableTreaties = faction.treaties.filter(t => !t.isActive);
                     const isRival = faction.diplomaticStatus === 'Rivalry';
                     const isAlly = faction.diplomaticStatus === 'Alliance';
+
+                    let proposeTooltip = "Propose a formal treaty with this faction.";
+                    if (isRival) proposeTooltip = "Cannot propose treaties with rivals!";
+                    else if (availableTreaties.length === 0) proposeTooltip = "No available treaties with this faction.";
 
                     return (
                         <div key={faction.id} className="bg-stone-800/50 p-4 rounded-lg border border-stone-700 flex flex-col gap-4">
@@ -90,7 +95,33 @@ export const FactionsView: React.FC<FactionsViewProps> = ({ factions, onStartDia
                                 </div>
                             )}
 
-                            <div className="mt-auto pt-4 border-t border-stone-600/50 space-y-2">
+                            <div className="flex-grow space-y-2 bg-black/20 p-3 rounded-md">
+                                <h4 className="font-bold text-md text-stone-300 border-b border-stone-600 pb-1 mb-2">Diplomatic Treaties</h4>
+                                {activeTreaty ? (
+                                    <Tooltip content={activeTreaty.description} position="right">
+                                        <div className="text-sm cursor-help">
+                                            <span className="font-bold text-green-400">Active:</span> {activeTreaty.name}
+                                        </div>
+                                    </Tooltip>
+                                ) : (
+                                    <p className="text-sm text-stone-500 italic">No active treaties.</p>
+                                )}
+                                {availableTreaties.length > 0 && (
+                                    <div>
+                                        <p className="text-sm font-bold text-stone-400 mt-2">Available:</p>
+                                        <ul className="list-disc list-inside text-xs pl-2">
+                                            {availableTreaties.map(treaty => (
+                                                <Tooltip key={treaty.id} content={treaty.description} position="right">
+                                                    <li className="text-stone-300 cursor-help">{treaty.name}</li>
+                                                </Tooltip>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+
+
+                            <div className="mt-auto pt-4 border-t border-stone-600/50 grid grid-cols-2 gap-2">
                                 <button 
                                     onClick={() => {
                                         onStartDialogue(faction.dialogueId);
@@ -100,27 +131,17 @@ export const FactionsView: React.FC<FactionsViewProps> = ({ factions, onStartDia
                                 >
                                     Open Diplomacy
                                 </button>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {activeTreaty ? (
-                                        <Tooltip content={activeTreaty.description}>
-                                            <button disabled className="w-full p-2 bg-green-800 text-xs font-bold rounded cursor-help">
-                                                Treaty Active
-                                            </button>
-                                        </Tooltip>
-                                    ) : (
-                                        <Tooltip content={isRival ? "Cannot propose treaties with rivals!" : "Propose a formal treaty."}>
-                                            <button 
-                                                onClick={() => onProposeTreaty(faction.id)}
-                                                disabled={isRival}
-                                                className="w-full p-2 bg-stone-600 hover:bg-stone-500 text-xs font-bold rounded transition-colors disabled:bg-stone-700 disabled:cursor-not-allowed"
-                                            >
-                                                Propose Treaty
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    <button disabled className="p-2 bg-stone-600 text-xs font-bold rounded opacity-50 cursor-not-allowed">Espionage</button>
-                                    <button disabled className="p-2 bg-stone-600 text-xs font-bold rounded opacity-50 cursor-not-allowed">Crumb War</button>
-                                </div>
+                                <Tooltip content={proposeTooltip}>
+                                  <div className="w-full">
+                                    <button 
+                                        onClick={() => onProposeTreaty(faction.id)}
+                                        disabled={isRival || availableTreaties.length === 0}
+                                        className="w-full p-2 bg-stone-600 hover:bg-stone-500 text-md font-bold rounded transition-colors disabled:bg-stone-700 disabled:cursor-not-allowed"
+                                    >
+                                        Propose Treaty
+                                    </button>
+                                  </div>
+                                </Tooltip>
                             </div>
                         </div>
                     );

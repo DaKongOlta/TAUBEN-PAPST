@@ -30,6 +30,13 @@ const CROW_TREATIES: Treaty[] = [
         description: 'The crows contribute a few shiny things... which turn out to be crumbs. Passively grants +0.2 crumbs/sec.',
         effect: { type: 'CRUMB_GAIN_ADD', value: 0.2 },
         isActive: false,
+    },
+    {
+        id: 'treaty-crows-02',
+        name: 'Corvid Spy Network',
+        description: 'The crows share whispers from the rooftops, disrupting your rivals. Passively reduces all rival heresy generation by 15%.',
+        effect: { type: 'GLOBAL_HERESY_REDUCTION', value: 0.15 },
+        isActive: false,
     }
 ];
 

@@ -89,6 +89,51 @@ export const ALL_CARDS: { [id: string]: Card } = {
     cost: { amount: 50, resource: ResourceType.Faith },
     effects: [{ type: 'GAIN_FOLLOWERS_BY_LEVEL', value: 0.5 }, { type: 'GAIN_XP', value: 25 }],
   },
+  'card-009': {
+    id: 'card-009',
+    name: 'Pious Peck',
+    type: 'Conflict',
+    art: '🙏💥',
+    description: 'Deals 8 damage, plus 2 extra damage for each Devout follower in your flock.',
+    cost: { amount: 20, resource: ResourceType.Faith },
+    effects: [{ type: 'PIOUS_PECK_DAMAGE', value: 8 }],
+  },
+  'card-010': {
+    id: 'card-010',
+    name: 'Featherduster\'s Fury',
+    type: 'Conflict',
+    art: '💨',
+    description: 'A whirlwind of feathers! Deals damage equal to the number of followers you have.',
+    cost: { amount: 30, resource: ResourceType.Faith },
+    effects: [{ type: 'SWARM_DAMAGE', value: 1 }],
+  },
+  'card-011': {
+    id: 'card-011',
+    name: 'Bureaucratic Blessing',
+    type: 'Ritual',
+    art: '📜✨',
+    description: 'Harness the power of paperwork. Gain Faith equal to 5x your total building levels.',
+    cost: { amount: 15, resource: ResourceType.Crumbs },
+    effects: [{ type: 'FAITH_FROM_BUILDINGS', value: 5 }],
+  },
+  'card-012': {
+    id: 'card-012',
+    name: 'Holy Rave',
+    type: 'Miracle',
+    art: '🎶🕺',
+    description: 'All followers become 50% more productive for 30 seconds.',
+    cost: { amount: 40, resource: ResourceType.Faith },
+    effects: [{ type: 'PRODUCTIVITY_BURST', value: 1.5, duration: 30 }],
+  },
+  'card-013': {
+    id: 'card-013',
+    name: 'Meme Warfare',
+    type: 'Ritual',
+    art: '😂🔥',
+    description: 'Confuse the rival sect with bizarre propaganda, reducing their Heresy generation by 75% for 15 turns.',
+    cost: { amount: 35, resource: ResourceType.Faith },
+    effects: [{ type: 'RIVAL_HERESY_RATE_MULTIPLIER', value: 0.25, duration: 15 }],
+  },
 };
 
 export const initialDeck: Card[] = [
@@ -98,6 +143,8 @@ export const initialDeck: Card[] = [
   ALL_CARDS['card-002'],
   ALL_CARDS['card-003'],
   ALL_CARDS['card-007'], // Start with a loot box card
+  ALL_CARDS['card-009'],
+  ALL_CARDS['card-011'],
 ];
 
 // Rivals
@@ -167,10 +214,23 @@ export const TYCOON_BUILDINGS: Omit<Building, 'level'>[] = [
         costResource: ResourceType.Crumbs,
         costMultiplier: 1.5,
     },
+    {
+        id: 'bld-dj-temple',
+        name: 'DJ Temple',
+        description: 'Pumps out holy dub-faith bass, keeping the flock happy and motivated.',
+        art: '🎶🎧',
+        baseCost: 150,
+        costResource: ResourceType.Crumbs,
+        costMultiplier: 1.8,
+        buff: {
+            type: 'GLOBAL_MORALE_BOOST',
+            value: 1, // +1 max morale per level
+        }
+    }
 ];
 
 // New Follower Management
-const PIGEON_NAMES = ['Pecky', 'Coo-lin', 'Wingston', 'Bread-ley', 'Skybert', 'Ruffles', 'Pidge', 'Featherick'];
+const PIGEON_NAMES = ['Pecky', 'Coo-lin', 'Wingston', 'Bread-ley', 'Skybert', 'Ruffles', 'Pidge', 'Featherick', 'Sir Cooington', 'Wing Commander', 'Breadna', 'Quilliam'];
 const PERSONALITIES: FollowerPersonality[] = ['Devout', 'Lazy', 'Rebel', 'Standard'];
 
 export const createInitialFollower = (): Follower => {
@@ -188,13 +248,16 @@ export const createInitialFollower = (): Follower => {
         case 'Devout':
             baseStats.devotion += 20;
             baseStats.loyalty += 10;
+            baseStats.productivity = 1.05;
             break;
         case 'Lazy':
             baseStats.productivity = 0.8;
+            baseStats.devotion -= 10;
             break;
         case 'Rebel':
             baseStats.loyalty -= 20;
             baseStats.productivity = 1.1;
+            baseStats.chaosIndex += 15;
             break;
     }
 

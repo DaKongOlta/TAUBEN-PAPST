@@ -1,4 +1,4 @@
-// FIX: Import 'React' to make its namespace available for type annotations like React.MouseEvent.
+// FIX: Import `React` to make its namespace available for type annotations like React.MouseEvent.
 import React, { useState, useCallback, useRef } from 'react';
 
 const MIN_ZOOM = 0.5;

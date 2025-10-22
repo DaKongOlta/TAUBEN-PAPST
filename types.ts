@@ -156,8 +156,8 @@ export interface Building {
   name: string;
   description: string;
   art: string;
-  productionType: ResourceType;
-  baseProduction: number; // per second
+  productionType?: ResourceType; // Made optional for buildings that only provide buffs
+  baseProduction?: number; // per second
   baseCost: number;
   costResource: ResourceType;
   costMultiplier: number;
@@ -379,4 +379,5 @@ export interface GameState {
     popeCustomization: PopeCustomization;
     streamDeckConfig: Array<StreamDeckAction | null>;
     incomingMessages: DialogueNode[];
+    triggeredMilestones: string[];
 }
